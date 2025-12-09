@@ -21,3 +21,8 @@ dist-ssr
 *.sln
 *.sw?
 .env
+Dink_sports/
+dink_backend/
+ADMIN_DASHBOARD.md
+PRODUCT_UPDATE_GUIDE.md
+MIGRATION_GUIDE.md

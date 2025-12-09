@@ -12,29 +12,49 @@ import Contact from './pages/Contact';
 import FAQ from './pages/FAQ';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
+import AdminLayout from './pages/admin/AdminLayout';
+import Dashboard from './pages/admin/Dashboard';
+import OrdersPage from './pages/admin/OrdersPage';
+import ProductsPage from './pages/admin/ProductsPage';
 
 function App() {
   return (
     <Router>
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-grow">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
-            <Route path="/custom-kits" element={<CustomKits />} />
-            <Route path="/support" element={<Support />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
-          </Routes>
-        </main>
-        <Footer />
-        <WhatsAppButton />
-      </div>
+      <Routes>
+        {/* Public routes with Header/Footer */}
+        <Route
+          path="/*"
+          element={
+            <div className="min-h-screen flex flex-col">
+              <Header />
+              <main className="flex-grow">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/shop" element={<Shop />} />
+                  <Route path="/product/:id" element={<ProductDetail />} />
+                  <Route path="/custom-kits" element={<CustomKits />} />
+                  <Route path="/support" element={<Support />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/faq" element={<FAQ />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
+                </Routes>
+              </main>
+              <Footer />
+              <WhatsAppButton />
+            </div>
+          }
+        />
+
+        {/* Admin routes without Header/Footer */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="orders" element={<OrdersPage />} />
+          <Route path="products" element={<ProductsPage />} />
+          <Route path="leads" element={<div>Leads page coming soon</div>} />
+        </Route>
+      </Routes>
     </Router>
   );
 }

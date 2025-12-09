@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { products, Product } from '../data/products';
+import { fetchProducts, Product as ApiProduct } from '../services/api';
 import ProductCard from '../components/ProductCard';
 import { Filter } from 'lucide-react';
 
@@ -8,7 +8,9 @@ const Shop = () => {
   const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedGender, setSelectedGender] = useState<string>('all');
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(products);
+  const [products, setProducts] = useState<ApiProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(true);
 
   useEffect(() => {
@@ -19,17 +21,25 @@ const Shop = () => {
   }, [searchParams]);
 
   useEffect(() => {
-    let filtered = products;
-
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter((p) => p.category === selectedCategory);
+    async function loadProducts() {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const category = selectedCategory !== 'all' ? selectedCategory : undefined;
+        const gender = selectedGender !== 'all' ? selectedGender : undefined;
+        
+        const data = await fetchProducts(category, gender);
+        setProducts(data);
+      } catch (err) {
+        console.error('Failed to load products:', err);
+        setError('Failed to load products. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
     }
 
-    if (selectedGender !== 'all') {
-      filtered = filtered.filter((p) => p.gender === selectedGender || p.gender === 'unisex');
-    }
-
-    setFilteredProducts(filtered);
+    loadProducts();
   }, [selectedCategory, selectedGender]);
 
   return (
@@ -194,7 +204,7 @@ const Shop = () => {
           <div className="flex-1">
             <div className="flex items-center justify-between mb-6">
               <p className="text-gray-600">
-                Showing {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
+                {loading ? 'Loading...' : `Showing ${products.length} product${products.length !== 1 ? 's' : ''}`}
               </p>
               <button
                 onClick={() => setShowFilters(!showFilters)}
@@ -205,9 +215,26 @@ const Shop = () => {
               </button>
             </div>
 
-            {filteredProducts.length > 0 ? (
+            {loading ? (
+              <div className="bg-white rounded-lg shadow-md p-12 text-center">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D92128]"></div>
+                  <p className="text-gray-600">Loading products...</p>
+                </div>
+              </div>
+            ) : error ? (
+              <div className="bg-white rounded-lg shadow-md p-12 text-center">
+                <p className="text-red-600 text-lg mb-4">{error}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-[#D92128] text-white px-6 py-2 rounded-lg hover:bg-[#b91a20] transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : products.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map((product) => (
+                {products.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
