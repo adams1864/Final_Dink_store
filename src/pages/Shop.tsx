@@ -11,6 +11,8 @@ const Shop = () => {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products);
   const [showFilters, setShowFilters] = useState(true);
 
+  // keep filter visible by default (including phones); user can toggle
+
   useEffect(() => {
     const categoryParam = searchParams.get('category');
     if (categoryParam) {
@@ -36,7 +38,7 @@ const Shop = () => {
     <div className="min-h-screen pt-20 bg-[#F4F4F4]">
       <div className="hero-bg py-12 mb-8 relative">
         <div className="absolute inset-0 bg-white/85"></div>
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <h1
             className="text-4xl md:text-5xl font-bold text-[#D92128] text-center uppercase relative z-10"
             style={{ fontFamily: 'Montserrat, sans-serif' }}
@@ -49,10 +51,10 @@ const Shop = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-6 pb-20">
-        <div className="flex gap-8">
-          <div className={`${showFilters ? 'w-64' : 'w-0'} transition-all duration-300 overflow-hidden flex-shrink-0`}>
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+        <div className="flex flex-col lg:flex-row gap-8">
+          <div className={`${showFilters ? 'w-full lg:w-64' : 'w-0 lg:w-64'} transition-all duration-300 overflow-hidden flex-shrink-0`}>
+            <div className="bg-white rounded-lg shadow-md p-6 lg:sticky top-0 lg:top-24">
               <div className="flex items-center justify-between mb-6">
                 <h3
                   className="text-xl font-bold text-[#1A1A1A]"
@@ -62,7 +64,8 @@ const Shop = () => {
                 </h3>
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className="md:hidden"
+                  className="lg:hidden bg-transparent p-1"
+                  aria-label="Toggle filters"
                 >
                   <Filter className="w-5 h-5" />
                 </button>
@@ -198,7 +201,7 @@ const Shop = () => {
               </p>
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="md:hidden bg-white px-4 py-2 rounded-lg shadow flex items-center gap-2"
+                className="lg:hidden bg-white px-4 py-2 rounded-lg shadow flex items-center gap-2"
               >
                 <Filter className="w-4 h-4" />
                 Filters

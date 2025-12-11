@@ -20,7 +20,7 @@ const Home = () => {
       <HeroSection heroImages={heroImages} />
 
       <section className="py-12 bg-[#F4F4F4]">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <h3
             className="text-center text-2xl font-bold text-[#1A1A1A] mb-8"
             style={{ fontFamily: 'Montserrat, sans-serif' }}
@@ -45,7 +45,7 @@ const Home = () => {
       </section>
 
       <section className="py-20 bg-white">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <h2
             className="text-4xl font-bold text-center text-[#1A1A1A] mb-12"
             style={{ fontFamily: 'Montserrat, sans-serif' }}
@@ -105,7 +105,7 @@ const Home = () => {
       </section>
 
       <section className="py-20 bg-[#F4F4F4]">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <h2
             className="text-4xl font-bold text-center text-[#1A1A1A] mb-16"
             style={{ fontFamily: 'Montserrat, sans-serif' }}
@@ -153,7 +153,7 @@ const Home = () => {
       </section>
 
       <section className="py-20 bg-[#1A1A1A] text-white">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>
               <h2
@@ -201,7 +201,7 @@ const Home = () => {
       </section>
 
       <section className="py-20 bg-white">
-        <div className="container mx-auto px-6 text-center">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2
             className="text-4xl font-bold text-[#1A1A1A] mb-6"
             style={{ fontFamily: 'Montserrat, sans-serif' }}
