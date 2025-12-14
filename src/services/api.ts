@@ -85,7 +85,7 @@ export interface Order {
   updatedAt: string;
 }
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = ((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api').replace(/\/$/, '');
 
 /**
  * Fetch products with optional filters
