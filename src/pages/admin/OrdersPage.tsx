@@ -30,15 +30,19 @@ export default function OrdersPage() {
     { id: number; orderNumber: string; customerName: string; status: string; totalCents: number | null; createdAt: string }[]
   >([]);
   const latestSeenRef = useRef<string | null>(null);
+  const pollingRef = useRef(false);
+
+  const [liveStatus, setLiveStatus] = useState<'running' | 'paused'>('running');
+  const [pollError, setPollError] = useState<string | null>(null);
 
   const BASELINE_KEY = 'orders.latestSeenCreatedAt';
 
-  function setBaseline(nextIso: string | null) {
+  function setBaseline(nextIso: string | null, { force }: { force?: boolean } = {}) {
     if (!nextIso) return;
     const nextTs = Date.parse(nextIso);
     if (!Number.isFinite(nextTs)) return;
     const currentTs = latestSeenRef.current ? Date.parse(latestSeenRef.current) : 0;
-    if (currentTs && nextTs <= currentTs) return;
+    if (!force && currentTs && nextTs <= currentTs) return;
 
     const normalized = new Date(nextTs).toISOString();
     latestSeenRef.current = normalized;
@@ -73,12 +77,23 @@ export default function OrdersPage() {
   useEffect(() => {
     if (!latestSeenCreatedAt) return;
 
-    void checkForNewOrders();
+    void checkForNewOrders(true);
     const interval = setInterval(() => {
       void checkForNewOrders();
-    }, 15000);
+    }, 20000);
 
     return () => clearInterval(interval);
+  }, [latestSeenCreatedAt]);
+
+  useEffect(() => {
+    function handleVisibility() {
+      if (!document.hidden && latestSeenCreatedAt) {
+        void checkForNewOrders(true);
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [latestSeenCreatedAt]);
 
   async function loadOrders() {
@@ -100,15 +115,42 @@ export default function OrdersPage() {
         return Number.isFinite(ts) && ts > acc ? ts : acc;
       }, 0);
 
-      if (latestTimestamp > 0) {
-        setBaseline(new Date(latestTimestamp).toISOString());
-      } else if (!latestSeenRef.current) {
-        setBaseline(new Date().toISOString());
+      // Initialize baseline only on first load
+      if (!latestSeenRef.current) {
+        if (latestTimestamp > 0) {
+          setBaseline(new Date(latestTimestamp).toISOString(), { force: true });
+        } else {
+          setBaseline(new Date().toISOString(), { force: true });
+        }
       }
 
-      setNewOrdersCount(0);
-      setNewOrdersLatestAt(null);
-      setNewOrdersPreview([]);
+      // Fallback: if new orders exist beyond baseline (missed notification), raise banner
+      const baselineTs = latestSeenRef.current ? Date.parse(latestSeenRef.current) : 0;
+      if (baselineTs && latestTimestamp > baselineTs) {
+        const fresh = result.data
+          .filter((o) => {
+            const ts = o.createdAt ? Date.parse(o.createdAt) : 0;
+            return Number.isFinite(ts) && ts > baselineTs;
+          })
+          .sort((a, b) => (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0))
+          .slice(0, 3)
+          .map((o) => ({
+            id: o.id,
+            orderNumber: o.orderNumber,
+            customerName: o.customerName,
+            status: o.status,
+            totalCents: o.totalCents,
+            createdAt: o.createdAt,
+          }));
+
+        setNewOrdersCount(fresh.length > 0 ? fresh.length : result.data.length);
+        setNewOrdersLatestAt(result.data[0]?.createdAt ?? null);
+        setNewOrdersPreview(fresh);
+      } else {
+        setNewOrdersCount(0);
+        setNewOrdersLatestAt(null);
+        setNewOrdersPreview([]);
+      }
     } catch (error) {
       console.error('Failed to load orders', error);
       setOrders([]);
@@ -117,11 +159,17 @@ export default function OrdersPage() {
     }
   }
 
-  async function checkForNewOrders() {
+  async function checkForNewOrders(force = false) {
     if (!latestSeenCreatedAt) return;
+    if (pollingRef.current && !force) return;
+    if (document.hidden && !force) return;
+
+    pollingRef.current = true;
 
     try {
       const result = await getNewOrdersSince(latestSeenCreatedAt);
+      setPollError(null);
+      setLiveStatus('running');
       const baselineTs = latestSeenRef.current ? Date.parse(latestSeenRef.current) : 0;
       const latestTs = result.latestCreatedAt ? Date.parse(result.latestCreatedAt as string) : 0;
 
@@ -142,6 +190,10 @@ export default function OrdersPage() {
       }
     } catch (error) {
       console.error('Failed to check new orders', error);
+      setPollError('Live updates paused. Click to resume or refresh.');
+      setLiveStatus('paused');
+    } finally {
+      pollingRef.current = false;
     }
   }
 
@@ -151,11 +203,13 @@ export default function OrdersPage() {
     const bestIso = Number.isFinite(latestTs) && latestTs > 0
       ? new Date(Math.max(latestTs, Date.parse(nowIso))).toISOString()
       : nowIso;
-    setBaseline(bestIso);
+    setBaseline(bestIso, { force: true });
 
     setNewOrdersCount(0);
     setNewOrdersLatestAt(null);
     setNewOrdersPreview([]);
+    setPollError(null);
+    setLiveStatus('running');
   }
 
   function handleSearchSubmit(e: React.FormEvent) {
@@ -227,6 +281,22 @@ export default function OrdersPage() {
           </button>
         </div>
       </div>
+
+      {pollError && (
+        <div className="flex items-center justify-between bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 rounded-lg text-sm">
+          <span>{pollError}</span>
+          <button
+            onClick={() => {
+              setPollError(null);
+              setLiveStatus('running');
+              void checkForNewOrders(true);
+            }}
+            className="px-3 py-1 bg-amber-600 text-white rounded-md text-xs font-semibold hover:bg-amber-700"
+          >
+            Resume
+          </button>
+        </div>
+      )}
 
       {newOrdersCount > 0 && (
         <div className="flex flex-col gap-3 bg-blue-50 border border-blue-200 text-blue-900 px-4 py-3 rounded-lg">
