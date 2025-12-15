@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import logo from '../assets/logo1.png';
 import { Link, useLocation } from 'react-router-dom';
 import { Send, Menu, X } from 'lucide-react';
 
@@ -30,7 +31,7 @@ const Header = () => {
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-3">
             <img
-              src="/src/assets/logo1.png"
+              src={logo}
               alt="Dink Sports Wear"
               className="h-12 w-12 object-contain"
             />

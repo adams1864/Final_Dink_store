@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Facebook, Instagram, Linkedin, Youtube } from 'lucide-react';
+import logo from '../assets/logo1.png';
 
 const Footer = () => {
   return (
@@ -9,7 +10,7 @@ const Footer = () => {
           <div>
             <div className="flex items-center space-x-3 mb-4">
               <img
-                src="/src/assets/logo1.png"
+                src={logo}
                 alt="Dink Sports Wear"
                 className="h-10 w-10 object-contain brightness-0 invert"
               />
