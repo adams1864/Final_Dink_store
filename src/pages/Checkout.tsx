@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Minus, Plus, Trash2 } from 'lucide-react';
 import { createOrder, initChapaPayment, formatPrice } from '../services/api';
 import { MIN_ORDER_QTY, useCart } from '../contexts/CartContext';
 
 const Checkout = () => {
-  const { items, total, clear } = useCart();
+  const { items, total, clear, updateQuantity, removeItem } = useCart();
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -123,7 +124,35 @@ const Checkout = () => {
                   </div>
                   <div className="flex-1">
                     <p className="font-medium text-gray-900">{item.name}</p>
-                    <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                        disabled={item.quantity <= MIN_ORDER_QTY}
+                        className="p-1 rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label="Decrease quantity"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="min-w-8 text-center text-sm font-medium">{item.quantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                        className="p-1 rounded border border-gray-200 hover:bg-gray-50"
+                        aria-label="Increase quantity"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeItem(item.productId)}
+                        className="ml-2 inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-700"
+                        aria-label="Remove item"
+                      >
+                        <Trash2 className="w-3 h-3" /> Remove
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Minimum per item: {MIN_ORDER_QTY}</p>
                   </div>
                   <div className="text-sm font-semibold text-gray-900">
                     {formatPrice(item.price * item.quantity)}

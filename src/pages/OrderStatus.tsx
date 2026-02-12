@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getReceiptUrl, verifyChapaPayment } from '../services/api';
+import { useCart } from '../contexts/CartContext';
 
 export default function OrderStatus() {
   const rawSearch = typeof window !== 'undefined' ? window.location.search.replace(/&amp;/g, '&') : '';
@@ -11,6 +12,7 @@ export default function OrderStatus() {
   const [status, setStatus] = useState<'loading' | 'success' | 'failed' | 'missing'>('loading');
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { clear } = useCart();
 
   useEffect(() => {
     if (!txRef) {
@@ -24,6 +26,7 @@ export default function OrderStatus() {
         if (!isMounted) return;
         if (result.status === 'success' && result.customerReceiptToken) {
           setReceiptUrl(getReceiptUrl(result.customerReceiptToken, { download: true }));
+          clear();
           setStatus('success');
         } else {
           setStatus('failed');
@@ -38,7 +41,7 @@ export default function OrderStatus() {
     return () => {
       isMounted = false;
     };
-  }, [txRef]);
+  }, [txRef, clear]);
 
   return (
     <div className="min-h-screen pt-20 bg-[#F4F4F4]">
