@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Product as ApiProduct, formatPrice } from '../services/api';
+import { useCart } from '../contexts/CartContext';
 
 interface ProductCardProps {
   product: ApiProduct;
@@ -8,6 +9,7 @@ interface ProductCardProps {
 const ProductCard = ({ product }: ProductCardProps) => {
   const isOutOfStock = product.stock === 0;
   const productImage = product.images && product.images.length > 0 ? product.images[0] : product.coverImage;
+  const { addItem } = useCart();
 
   return (
     <Link to={`/product/${product.id}`} className="group">
@@ -61,9 +63,19 @@ const ProductCard = ({ product }: ProductCardProps) => {
             <span className={`text-xs ${isOutOfStock ? 'text-red-600 font-semibold' : 'text-green-600'}`}>
               {isOutOfStock ? 'Out of Stock' : `${product.stock} in stock`}
             </span>
-            <span className="text-sm font-medium text-[#D92128]">
-              View Details
-            </span>
+            <button
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (!isOutOfStock) {
+                  addItem(product, 1);
+                }
+              }}
+              disabled={isOutOfStock}
+              className="text-sm font-medium text-[#D92128] hover:underline disabled:text-gray-400 disabled:no-underline"
+            >
+              Add to Cart
+            </button>
           </div>
         </div>
       </div>

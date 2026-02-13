@@ -7,48 +7,58 @@ interface FAQItem {
 }
 
 const FAQ = () => {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const faqs: FAQItem[] = [
     {
-      question: 'What is the minimum order quantity for custom jerseys?',
-      answer: 'Our minimum order quantity (MOQ) for custom team kits is 10 units. This allows small teams and clubs to access professional custom sportswear without large upfront costs.',
+      question: 'What sizes do you offer, and how do I choose the right fit?',
+      answer:
+        'Most jerseys are available in standard sizes from S to XL. If you are between sizes, we recommend choosing the larger size for a more comfortable fit. For team or custom-kit orders, our support team can help confirm sizing before production.',
     },
     {
-      question: 'Do you ship internationally?',
-      answer: 'Yes, we ship worldwide! We partner with DHL, FedEx, and Ethiopian Airlines Cargo to ensure reliable delivery to all corners of the globe. Shipping times vary by destination.',
+      question: 'What materials are your jerseys made from?',
+      answer:
+        'Our jerseys are made with lightweight, breathable performance fabric designed for comfort and durability. Material details may vary by design, but we prioritize sweat-friendly and long-lasting sportswear quality.',
     },
     {
-      question: 'How long does it take to produce custom kits?',
-      answer: 'Custom kit production typically takes 4-6 weeks from design approval to delivery. This includes design mockups, sample approval, bulk production, and shipping.',
+      question: 'Do you offer custom kits for teams? What is the minimum order quantity?',
+      answer:
+        'Yes. We support custom kits for teams, schools, and organizations. The minimum order quantity is 3 pieces per item. For larger team orders, contact us for design support and bulk pricing.',
     },
     {
-      question: 'Can I see a sample before placing a bulk order?',
-      answer: 'Absolutely! We provide physical samples for approval before beginning bulk production. Sample fees may apply but are often credited toward your final order.',
+      question: 'How long does production and delivery take?',
+      answer:
+        'Ready products are processed quickly, while custom orders require additional production time. Delivery timing depends on your location and order size. You will receive confirmation and status updates after checkout.',
     },
     {
-      question: 'What materials do you use?',
-      answer: 'We use high-performance polyester blends, often mixed with spandex or elastane for stretch. All materials are breathable, moisture-wicking, and designed for athletic performance.',
+      question: 'Which payment methods do you accept?',
+      answer:
+        'We currently support online payment through Chapa on checkout. Once payment is confirmed, your order status is updated automatically and a downloadable receipt is generated.',
     },
     {
-      question: 'Do you offer team sponsorships?',
-      answer: 'Yes, we have an ambassador program for teams and athletes. Contact us with your team details, and we\'ll discuss potential partnership opportunities.',
+      question: 'Do you deliver outside Addis Ababa? What are the delivery costs?',
+      answer:
+        'Yes, we can serve customers outside Addis Ababa depending on location coverage. Delivery pricing may vary by destination and order size. Final shipping details are shared during checkout confirmation.',
     },
     {
-      question: 'Can you match specific colors?',
-      answer: 'Yes, we offer Pantone color matching to ensure your team colors are reproduced accurately on your custom kits.',
+      question: 'Can customers return or exchange items? What is the return policy?',
+      answer:
+        'Returns or exchanges are reviewed case-by-case based on item condition and order type. For issues with size, defects, or delivery, contact support as soon as possible with your order number.',
     },
     {
-      question: 'What printing methods do you use for logos?',
-      answer: 'We offer both sublimation printing (for full designs) and embroidery (for logos). Sublimation provides unlimited colors and doesn\'t fade, while embroidery gives a premium, textured look.',
+      question: 'Are bulk discounts available for teams or organizations?',
+      answer:
+        'Yes. We provide bulk pricing for qualified team and organization orders. Share your quantity and design requirements, and we will provide a tailored quote.',
     },
     {
-      question: 'Do you accept returns or exchanges?',
-      answer: 'Due to the custom nature of our products, we don\'t accept returns unless there\'s a manufacturing defect. We ensure quality through sample approval before production.',
+      question: 'How can customers contact support (phone, Telegram, email)?',
+      answer:
+        'You can contact us through the Contact page on this website. If you already placed an order, include your order number so we can help you faster with payment, delivery, or receipt requests.',
     },
     {
-      question: 'What payment methods do you accept?',
-      answer: 'We accept bank transfers, credit cards (Visa, Mastercard), and local payment methods like Telebirr for Ethiopian customers. Payment terms are discussed during the ordering process.',
+      question: 'Do you offer sponsorship or partnership packages for clubs?',
+      answer:
+        'We are open to sponsorship and partnership discussions for clubs, academies, and communities. Send your proposal and audience details via our Contact page for review.',
     },
   ];
 
@@ -58,29 +68,32 @@ const FAQ = () => {
 
   return (
     <div className="min-h-screen pt-20 bg-[#F4F4F4]">
-      <div className="bg-[#1A1A1A] py-16">
-        <div className="container mx-auto px-6 text-center text-white">
+      <div className="bg-white border-b-4 border-[#D92128] py-14">
+        <div className="container mx-auto px-6 text-center text-[#1A1A1A]">
           <h1
-            className="text-4xl md:text-6xl font-bold uppercase mb-4"
+            className="text-3xl md:text-5xl font-bold uppercase mb-3"
             style={{ fontFamily: 'Montserrat, sans-serif' }}
           >
             Frequently Asked Questions
           </h1>
-          <p className="text-xl text-gray-300">
+          <p className="text-base md:text-lg text-gray-600">
             Find answers to common questions about our products and services
           </p>
         </div>
       </div>
 
       <div className="container mx-auto px-6 py-12 max-w-4xl">
+        <p className="text-sm text-gray-500 mb-6 text-center">
+          Last updated: February 2026
+        </p>
         <div className="space-y-4">
           {faqs.map((faq, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
               <button
                 onClick={() => toggleFAQ(index)}
                 className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
               >
-                <span className="font-bold text-[#1A1A1A] pr-4">{faq.question}</span>
+                <span className="font-semibold text-[#1A1A1A] pr-4">{faq.question}</span>
                 <ChevronDown
                   className={`w-5 h-5 text-[#D92128] flex-shrink-0 transition-transform ${
                     openIndex === index ? 'transform rotate-180' : ''
@@ -92,7 +105,7 @@ const FAQ = () => {
                   openIndex === index ? 'max-h-96' : 'max-h-0'
                 }`}
               >
-                <div className="px-6 pb-4 text-gray-600 leading-relaxed">{faq.answer}</div>
+                <div className="px-6 pb-5 text-gray-600 leading-relaxed text-[15px]">{faq.answer}</div>
               </div>
             </div>
           ))}

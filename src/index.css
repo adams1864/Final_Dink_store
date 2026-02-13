@@ -31,3 +31,9 @@
   background-position: center;
   background-repeat: no-repeat;
 }
+
+body.cart-open .floating-telegram {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.9);
+}

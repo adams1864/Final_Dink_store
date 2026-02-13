@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
 import logo from '../assets/logo1.png';
 import { Link, useLocation } from 'react-router-dom';
-import { Send, Menu, X } from 'lucide-react';
+import { Send, Menu, X, ShoppingCart } from 'lucide-react';
+import CartDrawer from './CartDrawer';
+import { useCart } from '../contexts/CartContext';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const location = useLocation();
+  const { itemCount } = useCart();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -108,6 +112,18 @@ const Header = () => {
 
           {/* Desktop CTAs */}
           <div className="hidden md:flex items-center space-x-4">
+            <button
+              onClick={() => setCartOpen(true)}
+              className="relative bg-white border border-gray-200 p-2 rounded-full hover:bg-gray-50"
+              aria-label="Open cart"
+            >
+              <ShoppingCart className="w-5 h-5 text-[#1A1A1A]" />
+              {itemCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-[#D92128] text-white text-xs font-semibold w-5 h-5 rounded-full flex items-center justify-center">
+                  {itemCount}
+                </span>
+              )}
+            </button>
             <Link
               to="/contact"
               className="bg-[#D92128] text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-[#b91a20] transition-colors"
@@ -186,6 +202,16 @@ const Header = () => {
               </Link>
 
               <div className="flex items-center gap-3 pt-3">
+                <button
+                  onClick={() => {
+                    setCartOpen(true);
+                    setMobileOpen(false);
+                  }}
+                  className="flex-1 inline-flex items-center justify-center border border-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100"
+                >
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  Cart {itemCount > 0 ? `(${itemCount})` : ''}
+                </button>
                 <Link
                   to="/contact"
                   onClick={() => setMobileOpen(false)}
@@ -207,6 +233,7 @@ const Header = () => {
           </div>
         )}
       </nav>
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
     </header>
   );
 };
