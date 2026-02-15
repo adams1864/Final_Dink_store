@@ -96,7 +96,6 @@ export interface Order {
   updatedAt: string;
 }
 
-<<<<<<< HEAD
 function normalizeOrder(order: any): Order {
   const total = order.totalCents ? order.totalCents / 100 : 0;
   const status =
@@ -265,9 +264,6 @@ function getMockProducts(
 
   return { data, meta };
 }
-=======
-export const API_BASE_URL = ((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api').replace(/\/$/, '');
->>>>>>> 7c505dca5f123beb0ffd763da633592b91f8e683
 
 /**
  * Fetch products with optional filters
@@ -277,6 +273,10 @@ export async function fetchProducts(
   gender?: string,
   query?: ProductQuery
 ): Promise<ProductsResponse> {
+  if (USE_MOCK_DATA) {
+    return getMockProducts(category, gender, query);
+  }
+
   try {
     const params = new URLSearchParams();
     
@@ -374,7 +374,6 @@ export async function createOrder(orderData: OrderRequest): Promise<Order> {
   }
 }
 
-<<<<<<< HEAD
 export interface ChapaInitResponse {
   actionUrl: string;
   fields: Record<string, string>;
@@ -490,8 +489,6 @@ export function getInvoiceUrl(token: string, options: { download?: boolean } = {
   return base;
 }
 
-=======
->>>>>>> 7c505dca5f123beb0ffd763da633592b91f8e683
 export interface OrderListMeta {
   page: number;
   perPage: number;
