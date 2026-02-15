@@ -9,6 +9,7 @@ import Shop from './pages/Shop';
 import ProductDetail from './pages/ProductDetail';
 import OrderStatus from './pages/OrderStatus';
 import Checkout from './pages/Checkout';
+import Cart from './pages/Cart';
 import CustomKits from './pages/CustomKits';
 import Support from './pages/Support';
 import Contact from './pages/Contact';
@@ -43,6 +44,7 @@ function App() {
                     <Route path="/about" element={<About />} />
                     <Route path="/shop" element={<Shop />} />
                     <Route path="/product/:id" element={<ProductDetail />} />
+                    <Route path="/cart" element={<Cart />} />
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/order-status" element={<OrderStatus />} />
                     <Route path="/custom-kits" element={<CustomKits />} />

@@ -9,6 +9,7 @@ import image4 from '../assets/image4.jpg';
 import { Flag, Globe, Plane, Droplet, Wind, Shield } from 'lucide-react';
 
 import HeroSection from '../components/HeroSection';
+import { FAQSection } from './FAQ';
 
 // (Removed unused WingLineArt - not needed when HeroSection provides decorations)
 
@@ -219,6 +220,9 @@ const Home = () => {
           </Link>
         </div>
       </section>
+
+      {/* FAQ Section below main content */}
+      <FAQSection />
     </div>
   );
 };

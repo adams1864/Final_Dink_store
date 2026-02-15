@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
+import { ShoppingCart } from 'lucide-react';
 import { Product as ApiProduct, formatPrice } from '../services/api';
+import { MIN_ORDER_QTY, useCart } from '../contexts/CartContext';
 
 interface ProductCardProps {
   product: ApiProduct;
@@ -8,10 +10,17 @@ interface ProductCardProps {
 const ProductCard = ({ product }: ProductCardProps) => {
   const isOutOfStock = product.stock === 0;
   const productImage = product.images && product.images.length > 0 ? product.images[0] : product.coverImage;
+  const { addItem } = useCart();
+
+  const handleAddToCart = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    if (isOutOfStock) return;
+    addItem(product, MIN_ORDER_QTY);
+  };
 
   return (
-    <Link to={`/product/${product.id}`} className="group">
-      <div className="bg-white shadow-md border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-xl">
+    <div className="group bg-white shadow-md border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-xl">
+      <Link to={`/product/${product.id}`} className="block">
         <div className="relative overflow-hidden aspect-square">
           <img
             src={productImage}
@@ -38,36 +47,52 @@ const ProductCard = ({ product }: ProductCardProps) => {
             )}
           </div>
         </div>
+      </Link>
 
-        <div className="p-4">
+      <div className="p-4">
+        <Link to={`/product/${product.id}`} className="block">
           <h3
             className="text-lg font-bold text-[#1A1A1A] mb-2 group-hover:text-[#D92128] transition-colors"
             style={{ fontFamily: 'Montserrat, sans-serif' }}
           >
             {product.name}
           </h3>
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-            {product.description}
-          </p>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-lg font-bold text-[#1A1A1A]">
-              {formatPrice(product.price)}
-            </span>
-            {product.sku && (
-              <span className="text-xs text-gray-500 uppercase">{product.sku}</span>
-            )}
-          </div>
-          <div className="flex items-center justify-between">
-            <span className={`text-xs ${isOutOfStock ? 'text-red-600 font-semibold' : 'text-green-600'}`}>
-              {isOutOfStock ? 'Out of Stock' : `${product.stock} in stock`}
-            </span>
-            <span className="text-sm font-medium text-[#D92128]">
-              View Details
-            </span>
-          </div>
+        </Link>
+        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+          {product.description}
+        </p>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-lg font-bold text-[#1A1A1A]">
+            {formatPrice(product.price)}
+          </span>
+          {product.sku && (
+            <span className="text-xs text-gray-500 uppercase">{product.sku}</span>
+          )}
         </div>
+        <div className="flex items-center justify-between">
+          <span className={`text-xs ${isOutOfStock ? 'text-red-600 font-semibold' : 'text-green-600'}`}>
+            {isOutOfStock ? 'Out of Stock' : `${product.stock} in stock`}
+          </span>
+          <Link to={`/product/${product.id}`} className="text-sm font-medium text-[#D92128]">
+            View Details
+          </Link>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          disabled={isOutOfStock}
+          className={`mt-4 w-full py-2.5 rounded-full font-semibold transition-colors inline-flex items-center justify-center gap-2 ${
+            isOutOfStock
+              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              : 'bg-white border border-[#D92128] text-[#D92128] hover:bg-[#fff1f1]'
+          }`}
+        >
+          <ShoppingCart className="w-4 h-4" />
+          Add to Cart
+        </button>
       </div>
-    </Link>
+    </div>
   );
 };
 

@@ -1,8 +1,6 @@
 import { Award, Heart, Target } from 'lucide-react';
 import image5 from '../assets/image5.jpg';
-
-
-
+import { FAQSection } from './FAQ';
 const About = () => {
   return (
     <div className="min-h-screen pt-20">
@@ -244,6 +242,9 @@ const About = () => {
           </a>
         </div>
       </section>
+
+      {/* FAQ Section below about content */}
+      <FAQSection />
     </div>
   );
 };
