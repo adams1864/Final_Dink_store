@@ -57,15 +57,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [items]
   );
 
-  const addItem = (product: Product, quantity = MIN_ORDER_QTY) => {
-    const normalizedQty = Math.max(quantity, MIN_ORDER_QTY);
+  const addItem = (product: Product, quantity = 1) => {
+    const normalizedQty = Math.max(Number(quantity) || 1, 1);
+    // debug logs to help diagnose unexpected quantities
+    try {
+      // eslint-disable-next-line no-console
+      console.debug('[Cart] addItem called', { id: (product as any).id, passed: quantity, normalizedQty });
+    } catch {}
     const image = product.images?.[0] ?? product.coverImage ?? product.image1 ?? product.image2 ?? null;
+    const pid = Number((product as any).id);
 
     setItems((prev) => {
-      const existing = prev.find((item) => item.productId === product.id);
+      const existing = prev.find((item) => item.productId === pid);
       if (existing) {
         return prev.map((item) =>
-          item.productId === product.id
+          item.productId === pid
             ? { ...item, quantity: item.quantity + normalizedQty }
             : item
         );
@@ -73,18 +79,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return [
         ...prev,
         {
-          productId: product.id,
+          productId: pid,
           name: product.name,
-          price: product.price,
+          price: Number(product.price) || 0,
           quantity: normalizedQty,
           image,
         },
       ];
     });
+
+    try {
+      window.dispatchEvent(new CustomEvent('cart:changed'));
+    } catch {}
   };
 
   const updateQuantity = (productId: number, quantity: number) => {
-    const normalizedQty = Math.max(quantity, MIN_ORDER_QTY);
+    const normalizedQty = Math.max(quantity, 1);
     setItems((prev) =>
       prev.map((item) =>
         item.productId === productId ? { ...item, quantity: normalizedQty } : item

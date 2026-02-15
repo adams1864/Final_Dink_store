@@ -153,7 +153,7 @@ const ProductDetail = () => {
 
   const handleAddToCart = () => {
     if (!product || isOutOfStock) return;
-    addItem(product, MIN_ORDER_QTY);
+    addItem(product, 1);
     setCartNotice('Added to cart.');
     window.setTimeout(() => setCartNotice(null), 2000);
   };

@@ -15,7 +15,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const handleAddToCart = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     if (isOutOfStock) return;
-    addItem(product, MIN_ORDER_QTY);
+    addItem(product, 1);
   };
 
   return (
