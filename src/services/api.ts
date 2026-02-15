@@ -814,11 +814,12 @@ export async function updateProduct(id: number, updates: Partial<Product>): Prom
   }
 }
 
-export async function uploadImage(file: File): Promise<{ url: string }> {
+export async function uploadImage(file: File, folder?: string): Promise<{ url: string }> {
   const formData = new FormData();
   formData.append('image', file);
 
-  const response = await fetch(`${API_BASE_URL}/upload`, {
+  const url = folder ? `${API_BASE_URL}/upload?folder=${encodeURIComponent(folder)}` : `${API_BASE_URL}/upload`;
+  const response = await fetch(url, {
     method: 'POST',
     body: formData,
   });

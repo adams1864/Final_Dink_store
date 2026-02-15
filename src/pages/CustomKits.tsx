@@ -22,7 +22,7 @@ const CustomKits = () => {
       let logoUrl: string | undefined;
 
       if (formData.logoFile) {
-        const upload = await uploadImage(formData.logoFile);
+        const upload = await uploadImage(formData.logoFile, 'dink_sports/messages');
         logoUrl = upload.url;
       }
 

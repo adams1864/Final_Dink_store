@@ -3,6 +3,7 @@ import {
   IconBrandProducthunt,
   IconFileInvoice,
   IconHomeBolt,
+  IconMessageCircle,
   IconReorder,
   IconShoppingCart,
 } from '@tabler/icons-react';
@@ -22,6 +23,11 @@ const menuItems = [
     label: 'Orders',
     icon: IconReorder,
     path: '/admin/orders',
+  },
+  {
+    label: 'Messages',
+    icon: IconMessageCircle,
+    path: '/admin/messages',
   },
   {
     label: 'Invoices',
