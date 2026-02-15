@@ -12,6 +12,9 @@ import {
   getSalesSummary,
   getSalesTopProducts,
   getSalesTrends,
+  getMessages,
+  getWebSocketUrl,
+  type MessageRecord,
   type SalesStatusCount,
   type SalesSummary,
   type SalesTopProduct,
@@ -75,6 +78,10 @@ export default function Dashboard() {
   const [trends, setTrends] = useState<SalesTrendPoint[]>([]);
   const [topProducts, setTopProducts] = useState<SalesTopProduct[]>([]);
   const [statusCounts, setStatusCounts] = useState<SalesStatusCount[]>([]);
+  const [messages, setMessages] = useState<MessageRecord[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(true);
+  const [messagesError, setMessagesError] = useState<string | null>(null);
+  const [wsConnected, setWsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -115,6 +122,59 @@ export default function Dashboard() {
       cancelled = true;
     };
   }, [rangeDays]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadMessages() {
+      try {
+        setMessagesLoading(true);
+        setMessagesError(null);
+        const data = await getMessages(8);
+        if (!cancelled) {
+          setMessages(data);
+        }
+      } catch (err: any) {
+        if (!cancelled) {
+          setMessagesError(err?.message || 'Failed to load messages');
+        }
+      } finally {
+        if (!cancelled) {
+          setMessagesLoading(false);
+        }
+      }
+    }
+
+    void loadMessages();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const wsUrl = getWebSocketUrl();
+    if (!wsUrl) return;
+
+    const socket = new WebSocket(wsUrl);
+    socket.onopen = () => setWsConnected(true);
+    socket.onclose = () => setWsConnected(false);
+    socket.onerror = () => setWsConnected(false);
+    socket.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload?.type === 'new_message' && payload?.data) {
+          setMessages((prev) => [payload.data as MessageRecord, ...prev].slice(0, 12));
+        }
+      } catch (_) {
+        // ignore malformed messages
+      }
+    };
+
+    return () => {
+      socket.close();
+    };
+  }, []);
 
   const statusMap = useMemo(() => {
     const map: Record<string, number> = {};
@@ -305,6 +365,60 @@ export default function Dashboard() {
                 <div className="text-right">
                   <p className="text-sm font-semibold text-gray-900">{formatCurrency(product.revenue)}</p>
                   <p className="text-xs text-gray-500">{product.quantity} units</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+          <div>
+            <p className="text-sm text-gray-600">Latest messages</p>
+            <p className="text-xs text-gray-500">
+              {wsConnected ? 'Live updates enabled' : 'Live updates disconnected'}
+            </p>
+          </div>
+          <span className="text-xs text-gray-500">Contact & custom quote</span>
+        </div>
+
+        {messagesError && (
+          <div className="px-4 py-3 text-sm text-rose-700 bg-rose-50 border-b border-rose-100">
+            {messagesError}
+          </div>
+        )}
+
+        {messagesLoading ? (
+          <div className="p-4 space-y-3">
+            <div className="h-4 bg-gray-100 animate-pulse rounded" />
+            <div className="h-4 bg-gray-100 animate-pulse rounded" />
+            <div className="h-4 bg-gray-100 animate-pulse rounded" />
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="p-6 text-center text-gray-500">No messages yet.</div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {messages.map((msg) => (
+              <div key={msg.id} className="px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${msg.type === 'quote' ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'}`}>
+                      {msg.type === 'quote' ? 'Custom Quote' : 'Contact'}
+                    </span>
+                    <span className="text-sm font-semibold text-gray-900">{msg.name}</span>
+                    <span className="text-xs text-gray-500">{msg.email}</span>
+                  </div>
+                  <p className="text-sm text-gray-700 mt-1">
+                    {msg.subject || msg.teamName || 'Message'}
+                  </p>
+                  {msg.message && (
+                    <p className="text-xs text-gray-500 mt-1">{msg.message}</p>
+                  )}
+                </div>
+                <div className="text-xs text-gray-500 sm:text-right">
+                  <div>{new Date(msg.createdAt).toLocaleString()}</div>
+                  {msg.quantity ? <div>Qty: {msg.quantity}</div> : null}
                 </div>
               </div>
             ))}

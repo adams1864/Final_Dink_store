@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Mail, Phone, MapPin } from 'lucide-react';
+import { createMessage } from '../services/api';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -9,10 +10,24 @@ const Contact = () => {
     message: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [status, setStatus] = useState<{ ok: boolean | null; message: string }>({ ok: null, message: '' });
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Thank you for contacting us! We will respond shortly.');
-    setFormData({ name: '', email: '', subject: '', message: '' });
+    try {
+      setStatus({ ok: null, message: 'Sending…' });
+      await createMessage({
+        type: 'contact',
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+      });
+      setStatus({ ok: true, message: 'Thank you for contacting us! We will respond shortly.' });
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (err: any) {
+      setStatus({ ok: false, message: err?.message || 'Something went wrong. Please try again.' });
+    }
   };
 
   return (
@@ -170,6 +185,15 @@ const Contact = () => {
                 >
                   Send Message
                 </button>
+                {status.message && (
+                  <p
+                    className={`mt-4 text-sm ${
+                      status.ok === false ? 'text-red-600' : status.ok === true ? 'text-green-600' : 'text-gray-600'
+                    }`}
+                  >
+                    {status.message}
+                  </p>
+                )}
               </form>
             </div>
           </div>

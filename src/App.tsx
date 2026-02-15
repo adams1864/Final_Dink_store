@@ -19,6 +19,7 @@ import AdminLayout from './pages/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
 import OrdersPage from './pages/admin/OrdersPage';
 import ProductsPage from './pages/admin/ProductsPage';
+import InvoicesPage from './pages/admin/InvoicesPage';
 import { CartProvider } from './contexts/CartContext';
 
 function App() {
@@ -60,6 +61,7 @@ function App() {
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="products" element={<ProductsPage />} />
+            <Route path="invoices" element={<InvoicesPage />} />
             <Route path="leads" element={<div>Leads page coming soon</div>} />
           </Route>
         </Routes>

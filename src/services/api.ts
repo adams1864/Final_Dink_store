@@ -111,8 +111,54 @@ export interface CreateOrderResponse extends Order {
   customerReceiptToken?: string;
 }
 
+export interface MessageRecord {
+  id: number;
+  type: 'contact' | 'quote';
+  name: string;
+  email: string;
+  phone: string | null;
+  subject: string | null;
+  message: string | null;
+  teamName: string | null;
+  quantity: number | null;
+  logoUrl: string | null;
+  status: string;
+  createdAt: string;
+}
+
+export interface MessageCreatePayload {
+  type: 'contact' | 'quote';
+  name: string;
+  email: string;
+  phone?: string;
+  subject?: string;
+  message?: string;
+  teamName?: string;
+  quantity?: number;
+  logoUrl?: string;
+}
+
 export const API_BASE_URL = ((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api').replace(/\/$/, '');
 const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+
+function resolveApiOrigin() {
+  const envBase = import.meta.env.VITE_API_BASE_URL as string | undefined;
+  if (envBase && /^https?:\/\//.test(envBase)) {
+    return new URL(envBase).origin;
+  }
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return '';
+}
+
+export function getWebSocketUrl() {
+  const origin = resolveApiOrigin();
+  if (!origin) return '';
+  const url = new URL(origin);
+  const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${url.host}/ws`;
+}
 
 function mapMockProduct(mock: MockProduct, index: number): Product {
   const basePrice = 850 + index * 75;
@@ -394,6 +440,52 @@ export function getReceiptUrl(token: string, options: { download?: boolean } = {
   }
 
   const base = `${API_BASE_URL}/receipts/${token}`;
+  if (options.download) {
+    return `${base}?download=1`;
+  }
+  return base;
+}
+
+export interface InvoiceSummary {
+  id: number;
+  orderId: number;
+  invoiceNumber: string;
+  status: string;
+  token: string;
+  totalCents: number;
+  currency: string;
+  issuedAt: string | null;
+}
+
+export async function getInvoiceByOrderId(orderId: number): Promise<InvoiceSummary> {
+  if (USE_MOCK_DATA) {
+    return {
+      id: Date.now(),
+      orderId,
+      invoiceNumber: `INV-MOCK-${orderId}`,
+      status: 'paid',
+      token: 'mock-invoice',
+      totalCents: 120000,
+      currency: 'ETB',
+      issuedAt: new Date().toISOString(),
+    };
+  }
+
+  const response = await fetch(`${API_BASE_URL}/invoices/order/${orderId}`);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Failed to fetch invoice: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export function getInvoiceUrl(token: string, options: { download?: boolean } = {}): string {
+  if (USE_MOCK_DATA) {
+    return '/mock-invoice.html';
+  }
+
+  const base = `${API_BASE_URL}/invoices/${token}`;
   if (options.download) {
     return `${base}?download=1`;
   }
@@ -720,6 +812,50 @@ export async function updateProduct(id: number, updates: Partial<Product>): Prom
     console.error('Error updating product:', error);
     throw error;
   }
+}
+
+export async function uploadImage(file: File): Promise<{ url: string }> {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  const response = await fetch(`${API_BASE_URL}/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || payload?.success === false) {
+    throw new Error(payload?.message || 'Failed to upload image');
+  }
+
+  return { url: payload.url };
+}
+
+export async function createMessage(payload: MessageCreatePayload): Promise<MessageRecord> {
+  const response = await fetch(`${API_BASE_URL}/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.message || 'Failed to send message');
+  }
+
+  return data;
+}
+
+export async function getMessages(limit = 10): Promise<MessageRecord[]> {
+  const response = await fetch(`${API_BASE_URL}/messages?limit=${limit}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch messages: ${response.statusText}`);
+  }
+
+  const payload = await response.json().catch(() => ({}));
+  return Array.isArray(payload?.data) ? payload.data : payload;
 }
 
 /**

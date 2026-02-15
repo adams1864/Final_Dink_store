@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import {
   IconBrandProducthunt,
+  IconFileInvoice,
   IconHomeBolt,
   IconReorder,
   IconShoppingCart,
@@ -21,6 +22,11 @@ const menuItems = [
     label: 'Orders',
     icon: IconReorder,
     path: '/admin/orders',
+  },
+  {
+    label: 'Invoices',
+    icon: IconFileInvoice,
+    path: '/admin/invoices',
   },
   {
     label: 'Leads',

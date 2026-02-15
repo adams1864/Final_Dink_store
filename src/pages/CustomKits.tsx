@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle, Upload } from 'lucide-react';
+import { createMessage, uploadImage } from '../services/api';
 
 const CustomKits = () => {
   const [formData, setFormData] = useState({
@@ -18,46 +19,25 @@ const CustomKits = () => {
     e.preventDefault();
     try {
       setStatus({ ok: null, message: 'Submitting…' });
-      // If a logo file is present, send as multipart form-data; otherwise JSON
-      const url = 'http://127.0.0.1:8000/api/quote/';
-      if (formData.logoFile) {
-        const fd = new FormData();
-        fd.append('teamName', formData.teamName);
-        fd.append('quantity', String(formData.quantity));
-        fd.append('contactName', formData.contactName);
-        fd.append('phone', formData.phone);
-        fd.append('email', formData.email);
-        fd.append('message', formData.message || '');
-        fd.append('logo', formData.logoFile);
+      let logoUrl: string | undefined;
 
-        const res = await fetch(url, { method: 'POST', body: fd });
-        const data = await res.json();
-        if (res.ok && data?.ok !== false) {
-          setStatus({ ok: true, message: 'Request sent successfully. We will contact you soon.' });
-        } else {
-          throw new Error(data?.error || 'Submission failed');
-        }
-      } else {
-        const payload = {
-          teamName: formData.teamName,
-          quantity: Number(formData.quantity),
-          contactName: formData.contactName,
-          phone: formData.phone,
-          email: formData.email,
-          message: formData.message || '',
-        };
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        const data = await res.json();
-        if (res.ok && data?.ok !== false) {
-          setStatus({ ok: true, message: 'Request sent successfully. We will contact you soon.' });
-        } else {
-          throw new Error(data?.error || 'Submission failed');
-        }
+      if (formData.logoFile) {
+        const upload = await uploadImage(formData.logoFile);
+        logoUrl = upload.url;
       }
+
+      await createMessage({
+        type: 'quote',
+        name: formData.contactName,
+        email: formData.email,
+        phone: formData.phone,
+        message: formData.message || '',
+        teamName: formData.teamName,
+        quantity: Number(formData.quantity),
+        logoUrl,
+      });
+
+      setStatus({ ok: true, message: 'Request sent successfully. We will contact you soon.' });
     } catch (err: any) {
       setStatus({ ok: false, message: err?.message || 'Something went wrong. Please try again.' });
     }

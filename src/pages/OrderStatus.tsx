@@ -21,22 +21,45 @@ export default function OrderStatus() {
     }
 
     let isMounted = true;
-    verifyChapaPayment(txRef)
-      .then((result) => {
-        if (!isMounted) return;
-        if (result.status === 'success' && result.customerReceiptToken) {
-          setReceiptUrl(getReceiptUrl(result.customerReceiptToken, { download: true }));
-          clear();
-          setStatus('success');
-        } else {
+    const MAX_RETRIES = 4;
+    const RETRY_DELAY_MS = 2000;
+
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    async function verifyWithRetry() {
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt += 1) {
+        try {
+          const result = await verifyChapaPayment(txRef);
+          if (!isMounted) return;
+
+          if (result.status === 'success' && result.customerReceiptToken) {
+            setReceiptUrl(getReceiptUrl(result.customerReceiptToken, { download: true }));
+            clear();
+            setStatus('success');
+            return;
+          }
+
+          if (attempt < MAX_RETRIES - 1) {
+            await sleep(RETRY_DELAY_MS);
+            continue;
+          }
+
           setStatus('failed');
+          return;
+        } catch (err: any) {
+          if (!isMounted) return;
+          if (attempt < MAX_RETRIES - 1) {
+            await sleep(RETRY_DELAY_MS);
+            continue;
+          }
+          setErrorMessage(err.message || 'Failed to verify payment.');
+          setStatus('failed');
+          return;
         }
-      })
-      .catch((err: any) => {
-        if (!isMounted) return;
-        setErrorMessage(err.message || 'Failed to verify payment.');
-        setStatus('failed');
-      });
+      }
+    }
+
+    void verifyWithRetry();
 
     return () => {
       isMounted = false;
@@ -73,14 +96,22 @@ export default function OrderStatus() {
                 )}
                 <p className="text-sm text-gray-600">Receipt type: Customer copy</p>
               </div>
-              {receiptUrl && (
-                <a
-                  href={receiptUrl}
-                  className="inline-flex items-center justify-center mt-6 bg-[#D92128] text-white px-6 py-2 rounded-lg hover:bg-[#b91a20] transition-colors"
+              <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+                {receiptUrl && (
+                  <a
+                    href={receiptUrl}
+                    className="inline-flex items-center justify-center bg-[#D92128] text-white px-6 py-2 rounded-lg hover:bg-[#b91a20] transition-colors"
+                  >
+                    Download Receipt
+                  </a>
+                )}
+                <Link
+                  to="/"
+                  className="inline-flex items-center justify-center bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  Download Receipt
-                </a>
-              )}
+                  Back to site
+                </Link>
+              </div>
             </>
           )}
 
