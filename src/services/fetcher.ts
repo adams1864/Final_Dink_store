@@ -1,5 +1,6 @@
-import { API_BASE_URL } from './api';
 import { getStoredToken } from './token';
+
+const API_BASE_URL = ((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api').replace(/\/$/, '');
 
 export async function apiFetch(input: RequestInfo, init?: RequestInit) {
   const token = getStoredToken();

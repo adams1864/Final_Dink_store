@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
 import logo from '../assets/logo1.png';
 import { Link, useLocation } from 'react-router-dom';
-import { Send, Menu, X } from 'lucide-react';
+import { Send, Menu, X, ShoppingCart } from 'lucide-react';
+import { useCart } from '../contexts/CartContext';
+import CartDrawer from './CartDrawer';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const location = useLocation();
+  const { items } = useCart();
+  const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -108,6 +113,19 @@ const Header = () => {
 
           {/* Desktop CTAs */}
           <div className="hidden md:flex items-center space-x-4">
+            <button
+              type="button"
+              onClick={() => setCartOpen(true)}
+              className="relative inline-flex items-center justify-center rounded-full border border-gray-200 bg-white/90 px-3 py-2 text-sm font-medium text-[#1A1A1A] hover:bg-gray-100"
+              aria-label="Cart"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-[#D92128] text-white text-[11px] font-semibold flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
+            </button>
             <Link
               to="/contact"
               className="bg-[#D92128] text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-[#b91a20] transition-colors"
@@ -125,14 +143,28 @@ const Header = () => {
             </a>
           </div>
 
-          {/* Mobile menu button */}
-          <button
-            className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-[#1A1A1A] hover:bg-gray-100"
-            aria-label="Toggle navigation"
-            onClick={() => setMobileOpen((v) => !v)}
-          >
-            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          <div className="md:hidden flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCartOpen(true)}
+              className="relative inline-flex items-center justify-center p-2 rounded-md text-[#1A1A1A] hover:bg-gray-100"
+              aria-label="Cart"
+            >
+              <ShoppingCart className="w-6 h-6" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-[#D92128] text-white text-[10px] font-semibold flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+            <button
+              className="inline-flex items-center justify-center p-2 rounded-md text-[#1A1A1A] hover:bg-gray-100"
+              aria-label="Toggle navigation"
+              onClick={() => setMobileOpen((v) => !v)}
+            >
+              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile panel */}
@@ -184,6 +216,23 @@ const Header = () => {
               >
                 Support
               </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileOpen(false);
+                  setCartOpen(true);
+                }}
+                className={`px-3 py-2 rounded-lg border border-gray-200 bg-white text-base font-medium flex items-center justify-between ${
+                  isActive('/cart') ? 'text-[#D92128]' : 'text-[#1A1A1A]'
+                } hover:bg-gray-100`}
+              >
+                <span>Cart</span>
+                {cartCount > 0 && (
+                  <span className="min-w-6 h-6 px-2 rounded-full bg-[#D92128] text-white text-xs font-semibold flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
 
               <div className="flex items-center gap-3 pt-3">
                 <Link
@@ -207,6 +256,7 @@ const Header = () => {
           </div>
         )}
       </nav>
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
     </header>
   );
 };

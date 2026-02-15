@@ -1,4 +1,6 @@
 // API Service for backend communication
+import apiFetch from './fetcher';
+import { products as mockProducts, type Product as MockProduct } from '../data/products';
 
 export interface Product {
   id: number;
@@ -65,6 +67,7 @@ export interface OrderRequest {
   selectedColor?: string;
   deliveryPreferences?: string;
   notes?: string;
+  couponCode?: string;
 }
 
 export interface Order {
@@ -78,6 +81,14 @@ export interface Order {
   selectedColor: string | null;
   deliveryPreferences: string | null;
   status: string;
+  paymentStatus?: string | null;
+  paymentProvider?: string | null;
+  paymentTxRef?: string | null;
+  paymentReference?: string | null;
+  paymentVerifiedAt?: string | null;
+  subtotalCents?: number | null;
+  discountCents?: number | null;
+  discountReason?: string | null;
   totalCents: number;
   total: number;
   notes: string | null;
@@ -85,7 +96,174 @@ export interface Order {
   updatedAt: string;
 }
 
+function normalizeOrder(order: any): Order {
+  const total = order.totalCents ? order.totalCents / 100 : 0;
+  const status =
+    order.paymentStatus === 'paid' && (order.status === 'pending' || order.status === 'failed')
+      ? 'paid'
+      : order.status;
+
+  return {
+    ...order,
+    status,
+    total,
+  };
+}
+
+export interface CreateOrderResponse extends Order {
+  customerReceiptToken?: string;
+}
+
+export interface MessageRecord {
+  id: number;
+  type: 'contact' | 'quote';
+  name: string;
+  email: string;
+  phone: string | null;
+  subject: string | null;
+  message: string | null;
+  teamName: string | null;
+  quantity: number | null;
+  logoUrl: string | null;
+  status: string;
+  createdAt: string;
+}
+
+export interface MessageCreatePayload {
+  type: 'contact' | 'quote';
+  name: string;
+  email: string;
+  phone?: string;
+  subject?: string;
+  message?: string;
+  teamName?: string;
+  quantity?: number;
+  logoUrl?: string;
+}
+
+export interface DiscountRecord {
+  id: number;
+  code: string;
+  type: 'percent' | 'fixed';
+  value: number;
+  minQty: number | null;
+  minSubtotalCents: number | null;
+  maxUses: number | null;
+  uses: number;
+  startsAt: string | null;
+  endsAt: string | null;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface DiscountCreatePayload {
+  code: string;
+  type: 'percent' | 'fixed';
+  value: number;
+  minQty?: number | null;
+  minSubtotalCents?: number | null;
+  maxUses?: number | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+}
+
 export const API_BASE_URL = ((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api').replace(/\/$/, '');
+const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+
+function resolveApiOrigin() {
+  const envBase = import.meta.env.VITE_API_BASE_URL as string | undefined;
+  if (envBase && /^https?:\/\//.test(envBase)) {
+    return new URL(envBase).origin;
+  }
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return '';
+}
+
+export function getWebSocketUrl() {
+  const origin = resolveApiOrigin();
+  if (!origin) return '';
+  const url = new URL(origin);
+  const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${url.host}/ws`;
+}
+
+function mapMockProduct(mock: MockProduct, index: number): Product {
+  const basePrice = 850 + index * 75;
+  const stock = 12 - (index % 5) * 2;
+  const imageList = mock.images ?? [];
+
+  return {
+    id: Number(mock.id),
+    name: mock.name,
+    description: mock.description,
+    category: mock.category,
+    size: 'S,M,L,XL',
+    gender: mock.gender,
+    price: basePrice,
+    stock: Math.max(stock, 0),
+    status: 'published',
+    coverImage: imageList[0] ?? '',
+    image1: imageList[1] ?? null,
+    image2: imageList[2] ?? null,
+    images: imageList,
+    color: 'Red',
+    colorValues: ['Red', 'Black', 'White'],
+    colors: [
+      { name: 'Red', hex: '#D92128' },
+      { name: 'Black', hex: '#1A1A1A' },
+      { name: 'White', hex: '#FFFFFF' },
+    ],
+    sku: mock.sku,
+    material: mock.material,
+    weight: mock.weight,
+    fit: mock.fit,
+    features: mock.features,
+    isNew: Boolean(mock.isNew),
+    isBestSeller: Boolean(mock.isBestSeller),
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function getMockProducts(
+  category?: string,
+  gender?: string,
+  query?: ProductQuery
+): ProductsResponse {
+  const normalizedCategory = category?.toLowerCase();
+  const normalizedGender = gender?.toLowerCase();
+  const search = query?.q?.toLowerCase().trim();
+
+  let data = mockProducts.map((product, index) => mapMockProduct(product, index));
+
+  if (normalizedCategory) {
+    data = data.filter((product) => product.category.toLowerCase() === normalizedCategory);
+  }
+
+  if (normalizedGender) {
+    data = data.filter((product) => product.gender.toLowerCase() === normalizedGender);
+  }
+
+  if (search) {
+    data = data.filter((product) => {
+      return (
+        product.name.toLowerCase().includes(search) ||
+        product.sku.toLowerCase().includes(search) ||
+        product.description.toLowerCase().includes(search)
+      );
+    });
+  }
+
+  const meta = {
+    page: 1,
+    perPage: data.length,
+    total: data.length,
+    totalPages: 1,
+  };
+
+  return { data, meta };
+}
 
 /**
  * Fetch products with optional filters
@@ -95,6 +273,10 @@ export async function fetchProducts(
   gender?: string,
   query?: ProductQuery
 ): Promise<ProductsResponse> {
+  if (USE_MOCK_DATA) {
+    return getMockProducts(category, gender, query);
+  }
+
   try {
     const params = new URLSearchParams();
     
@@ -190,6 +372,121 @@ export async function createOrder(orderData: OrderRequest): Promise<Order> {
     console.error('Error creating order:', error);
     throw error;
   }
+}
+
+export interface ChapaInitResponse {
+  actionUrl: string;
+  fields: Record<string, string>;
+  txRef: string;
+  orderId: number;
+  status?: string;
+  customerReceiptToken?: string;
+}
+
+export async function initChapaPayment(orderId: number): Promise<ChapaInitResponse> {
+  if (USE_MOCK_DATA) {
+    return {
+      actionUrl: '#',
+      fields: {},
+      txRef: `MOCK-${Date.now()}`,
+      orderId,
+      status: 'paid',
+      customerReceiptToken: 'mock-receipt',
+    };
+  }
+
+  const response = await fetch(`${API_BASE_URL}/payments/chapa/init`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ orderId }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Failed to initialize payment: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export interface ChapaVerifyResponse {
+  status: 'success' | 'failed';
+  orderId?: number;
+  customerReceiptToken?: string;
+}
+
+export async function verifyChapaPayment(txRef: string): Promise<ChapaVerifyResponse> {
+  if (USE_MOCK_DATA) {
+    return { status: 'success', orderId: 0, customerReceiptToken: 'mock-receipt' };
+  }
+
+  const response = await fetch(`${API_BASE_URL}/payments/chapa/verify?tx_ref=${encodeURIComponent(txRef)}`);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Failed to verify payment: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export function getReceiptUrl(token: string, options: { download?: boolean } = {}): string {
+  if (USE_MOCK_DATA) {
+    return '/mock-receipt.txt';
+  }
+
+  const base = `${API_BASE_URL}/receipts/${token}`;
+  if (options.download) {
+    return `${base}?download=1`;
+  }
+  return base;
+}
+
+export interface InvoiceSummary {
+  id: number;
+  orderId: number;
+  invoiceNumber: string;
+  status: string;
+  token: string;
+  totalCents: number;
+  currency: string;
+  issuedAt: string | null;
+}
+
+export async function getInvoiceByOrderId(orderId: number): Promise<InvoiceSummary> {
+  if (USE_MOCK_DATA) {
+    return {
+      id: Date.now(),
+      orderId,
+      invoiceNumber: `INV-MOCK-${orderId}`,
+      status: 'paid',
+      token: 'mock-invoice',
+      totalCents: 120000,
+      currency: 'ETB',
+      issuedAt: new Date().toISOString(),
+    };
+  }
+
+  const response = await fetch(`${API_BASE_URL}/invoices/order/${orderId}`);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Failed to fetch invoice: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export function getInvoiceUrl(token: string, options: { download?: boolean } = {}): string {
+  if (USE_MOCK_DATA) {
+    return '/mock-invoice.html';
+  }
+
+  const base = `${API_BASE_URL}/invoices/${token}`;
+  if (options.download) {
+    return `${base}?download=1`;
+  }
+  return base;
 }
 
 export interface OrderListMeta {
@@ -515,6 +812,109 @@ export async function updateProduct(id: number, updates: Partial<Product>): Prom
     console.error('Error updating product:', error);
     throw error;
   }
+}
+
+export async function uploadImage(file: File, folder?: string): Promise<{ url: string }> {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  const url = folder ? `${API_BASE_URL}/upload?folder=${encodeURIComponent(folder)}` : `${API_BASE_URL}/upload`;
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData,
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || payload?.success === false) {
+    throw new Error(payload?.message || 'Failed to upload image');
+  }
+
+  return { url: payload.url };
+}
+
+export async function createMessage(payload: MessageCreatePayload): Promise<MessageRecord> {
+  const response = await fetch(`${API_BASE_URL}/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.message || 'Failed to send message');
+  }
+
+  return data;
+}
+
+export async function getMessages(limit = 10): Promise<MessageRecord[]> {
+  const response = await fetch(`${API_BASE_URL}/messages?limit=${limit}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch messages: ${response.statusText}`);
+  }
+
+  const payload = await response.json().catch(() => ({}));
+  return Array.isArray(payload?.data) ? payload.data : payload;
+}
+
+export async function getDiscounts(): Promise<DiscountRecord[]> {
+  const response = await fetch(`${API_BASE_URL}/discounts`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch discounts: ${response.statusText}`);
+  }
+  const payload = await response.json().catch(() => ({}));
+  return Array.isArray(payload?.data) ? payload.data : payload;
+}
+
+export async function createDiscount(payload: DiscountCreatePayload): Promise<DiscountRecord> {
+  const response = await fetch(`${API_BASE_URL}/discounts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.message || 'Failed to create discount');
+  }
+  return data;
+}
+
+export async function updateDiscount(id: number, patch: Partial<DiscountCreatePayload> & { active?: boolean }): Promise<DiscountRecord> {
+  const response = await fetch(`${API_BASE_URL}/discounts/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.message || 'Failed to update discount');
+  }
+  return data;
+}
+
+export async function deleteDiscount(id: number): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/discounts/${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data?.message || 'Failed to delete discount');
+  }
+}
+
+export async function validateDiscount(code: string, subtotalCents: number, totalQty: number): Promise<{ discountCents: number; totalCents: number }>{
+  const response = await fetch(`${API_BASE_URL}/discounts/validate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, subtotalCents, totalQty }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.message || 'Invalid coupon');
+  }
+  return { discountCents: data.discountCents ?? 0, totalCents: data.totalCents ?? subtotalCents };
 }
 
 /**

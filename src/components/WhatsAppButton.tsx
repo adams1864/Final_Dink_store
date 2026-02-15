@@ -1,6 +1,28 @@
+import { useEffect, useState } from 'react';
 import { Send } from 'lucide-react';
 
 const WhatsAppButton = () => {
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    function onOpen() {
+      setHidden(true);
+    }
+    function onClose() {
+      setHidden(false);
+    }
+
+    window.addEventListener('cart:open', onOpen as EventListener);
+    window.addEventListener('cart:close', onClose as EventListener);
+
+    return () => {
+      window.removeEventListener('cart:open', onOpen as EventListener);
+      window.removeEventListener('cart:close', onClose as EventListener);
+    };
+  }, []);
+
+  if (hidden) return null;
+
   return (
     <a
       href="https://t.me/dinksportw"

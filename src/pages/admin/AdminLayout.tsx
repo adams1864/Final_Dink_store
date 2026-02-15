@@ -4,7 +4,10 @@ import { getCurrentUser } from '../../services/auth';
 import { adminLogout } from '../../services/auth';
 import {
   IconBrandProducthunt,
+  IconDiscount2,
+  IconFileInvoice,
   IconHomeBolt,
+  IconMessageCircle,
   IconReorder,
   IconShoppingCart,
 } from '@tabler/icons-react';
@@ -24,6 +27,21 @@ const menuItems = [
     label: 'Orders',
     icon: IconReorder,
     path: '/admin/orders',
+  },
+  {
+    label: 'Messages',
+    icon: IconMessageCircle,
+    path: '/admin/messages',
+  },
+  {
+    label: 'Discounts',
+    icon: IconDiscount2,
+    path: '/admin/discounts',
+  },
+  {
+    label: 'Invoices',
+    icon: IconFileInvoice,
+    path: '/admin/invoices',
   },
   {
     label: 'Leads',

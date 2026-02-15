@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { fetchProductById, createOrder, Product as ApiProduct } from '../services/api';
+import { fetchProductById, createOrder, initChapaPayment, validateDiscount, Product as ApiProduct } from '../services/api';
+import { MIN_ORDER_QTY, useCart } from '../contexts/CartContext';
 import { Phone, MessageCircle, Package, Droplet, Wind, Shield, Activity, X, ShoppingCart, Send } from 'lucide-react';
 
 const ProductDetail = () => {
@@ -12,6 +13,12 @@ const ProductDetail = () => {
   const [orderLoading, setOrderLoading] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
+  const [paymentRedirecting, setPaymentRedirecting] = useState(false);
+  const [cartNotice, setCartNotice] = useState<string | null>(null);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponStatus, setCouponStatus] = useState<{ ok: boolean | null; message: string }>({ ok: null, message: '' });
+  const [couponDiscountCents, setCouponDiscountCents] = useState(0);
+  const { addItem } = useCart();
   
   // Order form state
   const [orderForm, setOrderForm] = useState({
@@ -19,7 +26,7 @@ const ProductDetail = () => {
     customerEmail: '',
     customerPhone: '',
     address: '',
-    quantity: 1,
+    quantity: MIN_ORDER_QTY,
     selectedSize: '',
     selectedColor: '',
     deliveryPreferences: '',
@@ -53,9 +60,10 @@ const ProductDetail = () => {
     
     setOrderLoading(true);
     setOrderError(null);
-    
+    setPaymentRedirecting(false);
+
     try {
-      await createOrder({
+      const createdOrder = await createOrder({
         items: [{
           productId: product.id,
           quantity: orderForm.quantity,
@@ -68,24 +76,32 @@ const ProductDetail = () => {
         selectedColor: orderForm.selectedColor || undefined,
         deliveryPreferences: orderForm.deliveryPreferences || undefined,
         notes: orderForm.notes || undefined,
+        couponCode: couponCode.trim() || undefined,
       });
-      
-      setOrderSuccess(true);
-      setTimeout(() => {
-        setShowOrderModal(false);
-        setOrderSuccess(false);
-        setOrderForm({
-          customerName: '',
-          customerEmail: '',
-          customerPhone: '',
-          address: '',
-          quantity: 1,
-          selectedSize: '',
-          selectedColor: '',
-          deliveryPreferences: '',
-          notes: '',
-        });
-      }, 2000);
+
+      const paymentInit = await initChapaPayment(createdOrder.id);
+      if (paymentInit.status === 'paid' && paymentInit.customerReceiptToken) {
+        setOrderSuccess(true);
+        return;
+      }
+
+      setPaymentRedirecting(true);
+
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = paymentInit.actionUrl;
+
+      Object.entries(paymentInit.fields).forEach(([key, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+      form.remove();
     } catch (err: any) {
       setOrderError(err.message || 'Failed to create order. Please try again.');
     } finally {
@@ -93,6 +109,54 @@ const ProductDetail = () => {
     }
   };
 
+  const resetOrderFlow = () => {
+    setShowOrderModal(false);
+    setOrderSuccess(false);
+    setPaymentRedirecting(false);
+    setCouponCode('');
+    setCouponStatus({ ok: null, message: '' });
+    setCouponDiscountCents(0);
+    setOrderForm({
+      customerName: '',
+      customerEmail: '',
+      customerPhone: '',
+      address: '',
+      quantity: MIN_ORDER_QTY,
+      selectedSize: '',
+      selectedColor: '',
+      deliveryPreferences: '',
+      notes: '',
+    });
+  };
+
+  const subtotalCents = product ? Math.round((product.price || 0) * orderForm.quantity * 100) : 0;
+  const modalTotal = Math.max(0, (subtotalCents - couponDiscountCents) / 100);
+
+  const handleApplyCoupon = async () => {
+    if (!product) return;
+    if (!couponCode.trim()) {
+      setCouponStatus({ ok: false, message: 'Enter a coupon code.' });
+      setCouponDiscountCents(0);
+      return;
+    }
+
+    try {
+      setCouponStatus({ ok: null, message: 'Applying…' });
+      const result = await validateDiscount(couponCode.trim(), subtotalCents, orderForm.quantity);
+      setCouponDiscountCents(result.discountCents || 0);
+      setCouponStatus({ ok: true, message: 'Coupon applied.' });
+    } catch (err: any) {
+      setCouponDiscountCents(0);
+      setCouponStatus({ ok: false, message: err?.message || 'Invalid coupon.' });
+    }
+  };
+
+  const handleAddToCart = () => {
+    if (!product || isOutOfStock) return;
+    addItem(product, MIN_ORDER_QTY);
+    setCartNotice('Added to cart.');
+    window.setTimeout(() => setCartNotice(null), 2000);
+  };
   if (loading) {
     return (
       <div className="min-h-screen pt-20 flex items-center justify-center">
@@ -156,6 +220,33 @@ const ProductDetail = () => {
                 </div>
               ) : (
                 <form onSubmit={handleOrderSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Coupon code</label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D92128] focus:border-transparent"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                    {couponStatus.message && (
+                      <p
+                        className={`mt-2 text-xs ${
+                          couponStatus.ok === false ? 'text-red-600' : couponStatus.ok === true ? 'text-green-600' : 'text-gray-500'
+                        }`}
+                      >
+                        {couponStatus.message}
+                      </p>
+                    )}
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -287,6 +378,19 @@ const ProductDetail = () => {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D92128] focus:border-transparent"
                       rows={2}
                     />
+                  </div>
+
+                  <div className="border border-gray-200 rounded-lg p-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Subtotal</span>
+                      <span className="text-gray-900 font-medium">
+                        ETB {((subtotalCents / 100) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-2 text-base font-semibold">
+                      <span>Total</span>
+                      <span>ETB {modalTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
                   </div>
 
                   {orderError && (
@@ -453,11 +557,19 @@ const ProductDetail = () => {
               </div>
             )}
 
-            <div className="space-y-3">
+            <div className="rounded-2xl border border-[#f2c6c8] bg-[#fff7f7] p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] font-semibold tracking-[0.35em] text-[#B91A20]">ACTION CONSOLE</div>
+                <span className="text-xs font-semibold text-[#D92128] bg-white border border-[#f2c6c8] px-3 py-1 rounded-full">
+                  Fast checkout
+                </span>
+              </div>
+              <p className="text-sm text-gray-600">Pick a fast path to checkout or chat.</p>
+
               <button
                 onClick={() => setShowOrderModal(true)}
                 disabled={isOutOfStock}
-                className={`w-full py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-3 ${
+                className={`w-full py-3.5 rounded-full font-semibold transition-colors flex items-center justify-center gap-3 ${
                   isOutOfStock
                     ? 'bg-gray-400 text-white cursor-not-allowed'
                     : 'bg-[#D92128] text-white hover:bg-[#b91a20]'
@@ -467,27 +579,49 @@ const ProductDetail = () => {
                 {isOutOfStock ? 'Out of Stock' : 'Order Now'}
               </button>
 
-              <a
-                href="tel:+251900000000"
-                className="w-full bg-[#1A1A1A] text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-3"
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={isOutOfStock}
+                className={`w-full py-3.5 rounded-full font-semibold transition-colors flex items-center justify-center gap-3 ${
+                  isOutOfStock
+                    ? 'bg-gray-300 text-white cursor-not-allowed'
+                    : 'bg-white border border-[#D92128] text-[#D92128] hover:bg-[#fff1f1]'
+                }`}
               >
-                <Phone className="w-5 h-5" />
-                Call Us
-              </a>
+                <ShoppingCart className="w-5 h-5" />
+                Add to Cart (min {MIN_ORDER_QTY})
+              </button>
 
-              <a
-                href={`https://wa.me/251900000000?text=Hi, I'm interested in ${product.name}${product.sku ? ` (${product.sku})` : ''}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 bg-[#0088cc] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#007ab8] transition-colors"
-              >
-                <Send className="w-5 h-5" />
-                Telegram
-              </a>
+              {cartNotice && (
+                <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                  {cartNotice}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <a
+                  href="tel:+251900000000"
+                  className="w-full bg-[#1A1A1A] text-white py-3 rounded-full font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-3"
+                >
+                  <Phone className="w-5 h-5" />
+                  Call Us
+                </a>
+
+                <a
+                  href={`https://wa.me/251900000000?text=Hi, I'm interested in ${product.name}${product.sku ? ` (${product.sku})` : ''}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-[#0088cc] text-white px-4 py-3 rounded-full font-semibold hover:bg-[#007ab8] transition-colors"
+                >
+                  <Send className="w-5 h-5" />
+                  Telegram
+                </a>
+              </div>
 
               <Link
                 to="/contact"
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors font-semibold"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors font-semibold"
               >
                 Request Bulk Quote
               </Link>
