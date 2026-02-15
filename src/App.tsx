@@ -21,6 +21,7 @@ import OrdersPage from './pages/admin/OrdersPage';
 import ProductsPage from './pages/admin/ProductsPage';
 import InvoicesPage from './pages/admin/InvoicesPage';
 import MessagesPage from './pages/admin/MessagesPage';
+import DiscountsPage from './pages/admin/DiscountsPage';
 import { CartProvider } from './contexts/CartContext';
 
 function App() {
@@ -64,6 +65,7 @@ function App() {
             <Route path="products" element={<ProductsPage />} />
             <Route path="invoices" element={<InvoicesPage />} />
             <Route path="messages" element={<MessagesPage />} />
+            <Route path="discounts" element={<DiscountsPage />} />
             <Route path="leads" element={<div>Leads page coming soon</div>} />
           </Route>
         </Routes>

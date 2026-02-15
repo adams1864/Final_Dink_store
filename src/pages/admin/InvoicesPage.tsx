@@ -175,6 +175,9 @@ export default function InvoicesPage() {
                   Total
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Discount
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Issued
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -185,7 +188,7 @@ export default function InvoicesPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-6">
+                  <td colSpan={8} className="px-6 py-6">
                     <div className="space-y-2">
                       <div className="h-4 bg-gray-200 rounded animate-pulse" />
                       <div className="h-4 bg-gray-200 rounded animate-pulse" />
@@ -195,7 +198,7 @@ export default function InvoicesPage() {
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
                     No orders found
                   </td>
                 </tr>
@@ -223,6 +226,15 @@ export default function InvoicesPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                         {formatCurrencyCents(order.totalCents)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {order.discountCents && order.discountCents > 0 ? (
+                          <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
+                            - {formatCurrencyCents(order.discountCents)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-400">—</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {invoice?.issuedAt ? new Date(invoice.issuedAt).toLocaleString() : '—'}

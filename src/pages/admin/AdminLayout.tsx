@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import {
   IconBrandProducthunt,
+  IconDiscount2,
   IconFileInvoice,
   IconHomeBolt,
   IconMessageCircle,
@@ -28,6 +29,11 @@ const menuItems = [
     label: 'Messages',
     icon: IconMessageCircle,
     path: '/admin/messages',
+  },
+  {
+    label: 'Discounts',
+    icon: IconDiscount2,
+    path: '/admin/discounts',
   },
   {
     label: 'Invoices',

@@ -68,6 +68,7 @@ export interface OrderRequest {
   selectedColor?: string;
   deliveryPreferences?: string;
   notes?: string;
+  couponCode?: string;
 }
 
 export interface Order {
@@ -86,6 +87,9 @@ export interface Order {
   paymentTxRef?: string | null;
   paymentReference?: string | null;
   paymentVerifiedAt?: string | null;
+  subtotalCents?: number | null;
+  discountCents?: number | null;
+  discountReason?: string | null;
   totalCents: number;
   total: number;
   notes: string | null;
@@ -136,6 +140,32 @@ export interface MessageCreatePayload {
   teamName?: string;
   quantity?: number;
   logoUrl?: string;
+}
+
+export interface DiscountRecord {
+  id: number;
+  code: string;
+  type: 'percent' | 'fixed';
+  value: number;
+  minQty: number | null;
+  minSubtotalCents: number | null;
+  maxUses: number | null;
+  uses: number;
+  startsAt: string | null;
+  endsAt: string | null;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface DiscountCreatePayload {
+  code: string;
+  type: 'percent' | 'fixed';
+  value: number;
+  minQty?: number | null;
+  minSubtotalCents?: number | null;
+  maxUses?: number | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
 }
 
 export const API_BASE_URL = ((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api').replace(/\/$/, '');
@@ -857,6 +887,64 @@ export async function getMessages(limit = 10): Promise<MessageRecord[]> {
 
   const payload = await response.json().catch(() => ({}));
   return Array.isArray(payload?.data) ? payload.data : payload;
+}
+
+export async function getDiscounts(): Promise<DiscountRecord[]> {
+  const response = await fetch(`${API_BASE_URL}/discounts`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch discounts: ${response.statusText}`);
+  }
+  const payload = await response.json().catch(() => ({}));
+  return Array.isArray(payload?.data) ? payload.data : payload;
+}
+
+export async function createDiscount(payload: DiscountCreatePayload): Promise<DiscountRecord> {
+  const response = await fetch(`${API_BASE_URL}/discounts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.message || 'Failed to create discount');
+  }
+  return data;
+}
+
+export async function updateDiscount(id: number, patch: Partial<DiscountCreatePayload> & { active?: boolean }): Promise<DiscountRecord> {
+  const response = await fetch(`${API_BASE_URL}/discounts/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.message || 'Failed to update discount');
+  }
+  return data;
+}
+
+export async function deleteDiscount(id: number): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/discounts/${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data?.message || 'Failed to delete discount');
+  }
+}
+
+export async function validateDiscount(code: string, subtotalCents: number, totalQty: number): Promise<{ discountCents: number; totalCents: number }>{
+  const response = await fetch(`${API_BASE_URL}/discounts/validate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, subtotalCents, totalQty }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.message || 'Invalid coupon');
+  }
+  return { discountCents: data.discountCents ?? 0, totalCents: data.totalCents ?? subtotalCents };
 }
 
 /**

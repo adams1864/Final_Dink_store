@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { fetchProductById, createOrder, initChapaPayment, Product as ApiProduct } from '../services/api';
+import { fetchProductById, createOrder, initChapaPayment, validateDiscount, Product as ApiProduct } from '../services/api';
 import { MIN_ORDER_QTY, useCart } from '../contexts/CartContext';
 import { Phone, MessageCircle, Package, Droplet, Wind, Shield, Activity, X, ShoppingCart, Send } from 'lucide-react';
 
@@ -15,6 +15,9 @@ const ProductDetail = () => {
   const [orderError, setOrderError] = useState<string | null>(null);
   const [paymentRedirecting, setPaymentRedirecting] = useState(false);
   const [cartNotice, setCartNotice] = useState<string | null>(null);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponStatus, setCouponStatus] = useState<{ ok: boolean | null; message: string }>({ ok: null, message: '' });
+  const [couponDiscountCents, setCouponDiscountCents] = useState(0);
   const { addItem } = useCart();
   
   // Order form state
@@ -73,6 +76,7 @@ const ProductDetail = () => {
         selectedColor: orderForm.selectedColor || undefined,
         deliveryPreferences: orderForm.deliveryPreferences || undefined,
         notes: orderForm.notes || undefined,
+        couponCode: couponCode.trim() || undefined,
       });
 
       const paymentInit = await initChapaPayment(createdOrder.id);
@@ -109,6 +113,9 @@ const ProductDetail = () => {
     setShowOrderModal(false);
     setOrderSuccess(false);
     setPaymentRedirecting(false);
+    setCouponCode('');
+    setCouponStatus({ ok: null, message: '' });
+    setCouponDiscountCents(0);
     setOrderForm({
       customerName: '',
       customerEmail: '',
@@ -120,6 +127,28 @@ const ProductDetail = () => {
       deliveryPreferences: '',
       notes: '',
     });
+  };
+
+  const subtotalCents = product ? Math.round((product.price || 0) * orderForm.quantity * 100) : 0;
+  const modalTotal = Math.max(0, (subtotalCents - couponDiscountCents) / 100);
+
+  const handleApplyCoupon = async () => {
+    if (!product) return;
+    if (!couponCode.trim()) {
+      setCouponStatus({ ok: false, message: 'Enter a coupon code.' });
+      setCouponDiscountCents(0);
+      return;
+    }
+
+    try {
+      setCouponStatus({ ok: null, message: 'Applying…' });
+      const result = await validateDiscount(couponCode.trim(), subtotalCents, orderForm.quantity);
+      setCouponDiscountCents(result.discountCents || 0);
+      setCouponStatus({ ok: true, message: 'Coupon applied.' });
+    } catch (err: any) {
+      setCouponDiscountCents(0);
+      setCouponStatus({ ok: false, message: err?.message || 'Invalid coupon.' });
+    }
   };
 
   const handleAddToCart = () => {
@@ -198,6 +227,33 @@ const ProductDetail = () => {
                 </div>
               ) : (
                 <form onSubmit={handleOrderSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Coupon code</label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D92128] focus:border-transparent"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                    {couponStatus.message && (
+                      <p
+                        className={`mt-2 text-xs ${
+                          couponStatus.ok === false ? 'text-red-600' : couponStatus.ok === true ? 'text-green-600' : 'text-gray-500'
+                        }`}
+                      >
+                        {couponStatus.message}
+                      </p>
+                    )}
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -330,6 +386,27 @@ const ProductDetail = () => {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D92128] focus:border-transparent"
                       rows={2}
                     />
+                  </div>
+
+                  <div className="border border-gray-200 rounded-lg p-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Subtotal</span>
+                      <span className="text-gray-900 font-medium">
+                        ETB {((subtotalCents / 100) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-gray-600">Discount</span>
+                      <span className={couponDiscountCents > 0 ? 'text-emerald-600 font-medium' : 'text-gray-400'}>
+                        {couponDiscountCents > 0
+                          ? `- ETB ${(couponDiscountCents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                          : '—'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-2 text-base font-semibold">
+                      <span>Total</span>
+                      <span>ETB {modalTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
                   </div>
 
                   {orderError && (

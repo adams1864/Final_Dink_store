@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Minus, Plus, Trash2 } from 'lucide-react';
-import { createOrder, initChapaPayment, formatPrice } from '../services/api';
+import { createOrder, initChapaPayment, formatPrice, validateDiscount } from '../services/api';
 import { MIN_ORDER_QTY, useCart } from '../contexts/CartContext';
 
 const Checkout = () => {
@@ -9,6 +9,9 @@ const Checkout = () => {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponStatus, setCouponStatus] = useState<{ ok: boolean | null; message: string }>({ ok: null, message: '' });
+  const [couponDiscountCents, setCouponDiscountCents] = useState(0);
 
   const [form, setForm] = useState({
     customerName: '',
@@ -19,6 +22,10 @@ const Checkout = () => {
     notes: '',
   });
 
+  const totalQty = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
+  const subtotalCents = useMemo(() => Math.round(total * 100), [total]);
+  const grandTotal = Math.max(0, total - couponDiscountCents / 100);
+
   const orderItems = useMemo(
     () =>
       items.map((item) => ({
@@ -27,6 +34,24 @@ const Checkout = () => {
       })),
     [items]
   );
+
+  async function handleApplyCoupon() {
+    if (!couponCode.trim()) {
+      setCouponStatus({ ok: false, message: 'Enter a coupon code.' });
+      setCouponDiscountCents(0);
+      return;
+    }
+
+    try {
+      setCouponStatus({ ok: null, message: 'Applying…' });
+      const result = await validateDiscount(couponCode.trim(), subtotalCents, totalQty);
+      setCouponDiscountCents(result.discountCents || 0);
+      setCouponStatus({ ok: true, message: 'Coupon applied.' });
+    } catch (err: any) {
+      setCouponDiscountCents(0);
+      setCouponStatus({ ok: false, message: err?.message || 'Invalid coupon.' });
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -50,6 +75,7 @@ const Checkout = () => {
         address: form.address,
         deliveryPreferences: form.deliveryPreferences || undefined,
         notes: form.notes || undefined,
+        couponCode: couponCode.trim() || undefined,
       });
 
       const paymentInit = await initChapaPayment(createdOrder.id);
@@ -160,9 +186,21 @@ const Checkout = () => {
                 </div>
               ))}
             </div>
-            <div className="flex items-center justify-between mt-6 text-lg font-semibold">
-              <span>Total</span>
-              <span>{formatPrice(total)}</span>
+            <div className="mt-6 space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Subtotal</span>
+                <span className="text-gray-900 font-medium">{formatPrice(total)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Discount</span>
+                <span className={couponDiscountCents > 0 ? 'text-emerald-600 font-medium' : 'text-gray-400'}>
+                  {couponDiscountCents > 0 ? `- ${formatPrice(couponDiscountCents / 100)}` : '—'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-lg font-semibold">
+                <span>Total</span>
+                <span>{formatPrice(grandTotal)}</span>
+              </div>
             </div>
           </div>
 
@@ -170,6 +208,33 @@ const Checkout = () => {
             <h2 className="text-xl font-bold text-[#1A1A1A] mb-4">Checkout</h2>
             <p className="text-xs text-gray-500 mb-3">Minimum order quantity: {MIN_ORDER_QTY} per item.</p>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Coupon code</label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(event) => setCouponCode(event.target.value)}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D92128] focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                  >
+                    Apply
+                  </button>
+                </div>
+                {couponStatus.message && (
+                  <p
+                    className={`mt-2 text-xs ${
+                      couponStatus.ok === false ? 'text-red-600' : couponStatus.ok === true ? 'text-green-600' : 'text-gray-500'
+                    }`}
+                  >
+                    {couponStatus.message}
+                  </p>
+                )}
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Name <span className="text-red-600">*</span>
