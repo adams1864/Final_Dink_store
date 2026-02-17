@@ -12,27 +12,43 @@ export function FAQSection() {
   const faqs: FAQItem[] = [
     {
       question: 'What sizes do you offer, and how do I choose the right fit?',
-      answer: 'Most jerseys are available in standard sizes from S to XL. If you are between sizes, we recommend choosing the larger size for a more comfortable fit. For team or custom-kit orders, our support team can help confirm sizing before production.',
+      answer:
+        'Yes — we typically offer standard sizes from S to XL. If you find yourself between sizes, you may prefer choosing the larger size for a slightly roomier, more comfortable fit. For team or custom-kit orders we can usually help confirm measurements before production and recommend the best size range based on your preferences.',
     },
     {
       question: 'What materials are your jerseys made from?',
-      answer: 'We use high-performance polyester blends designed for sport. The fabric is breathable, moisture-wicking, and durable for frequent use and washing.',
+      answer:
+        'Our jerseys are typically made from high-performance polyester blends. These fabrics are generally breathable, moisture-wicking, and designed to hold up to frequent use and washing. Exact fabric compositions may vary by product, and we can share specifics on request.',
     },
     {
       question: 'What is the minimum order quantity for custom kits?',
-      answer: 'Our minimum order quantity (MOQ) for custom team kits is 10 units. This keeps production efficient while still supporting smaller teams.',
+      answer:
+        'Our minimum order quantity for custom kits is usually 10 pieces. This helps keep production efficient while still accommodating smaller teams; in some cases exceptions may be possible—please contact us to discuss special requests.',
     },
     {
       question: 'How long does it take to produce custom kits?',
-      answer: 'Custom kit production typically takes 4 to 6 weeks from design approval to delivery, including mockups, sample approval, and production.',
+      answer:
+        'Production for most standard or small custom orders typically takes around 4 days from final design approval for ready-made or simple orders. Larger runs, complex customizations, or orders requiring samples and approvals may take longer—allow extra lead time and check with our team for an estimated schedule.',
     },
     {
       question: 'Can you match specific team colors?',
-      answer: 'Yes. We can match Pantone colors to keep your team branding consistent across kits and accessories.',
+      answer:
+        'Yes — we can usually match specific team colors. We often use Pantone or similar color-matching systems to keep branding consistent across kits and accessories, but please note that exact matches can sometimes vary slightly depending on material and printing method.',
     },
     {
       question: 'What payment methods do you accept?',
-      answer: 'We accept bank transfer, major cards, and local options such as Telebirr for Ethiopian customers.',
+      answer:
+        'We accept cash, mobile banking, and Tele birr. Other payment options may be available upon request—contact us if you need an alternative payment method for your order.',
+    },
+    {
+      question: 'What printing or decoration methods do you offer?',
+      answer:
+        'We commonly offer sublimation, DTF (Direct-to-Film), and embroidery. Each method has different strengths—sublimation is great for full-colour, all-over prints; DTF works well for vibrant transfers on many fabrics; embroidery provides a durable, textured finish for logos. We can recommend the best method based on your design and fabric.',
+    },
+    {
+      question: 'What is your returns or exchange policy?',
+      answer:
+        'We generally offer exchanges rather than refunds. Exchanges are usually handled on a case-by-case basis depending on the item condition and reason for exchange—please contact customer support to confirm eligibility and arrange an exchange.',
     },
   ];
 
