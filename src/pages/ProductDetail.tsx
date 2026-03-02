@@ -1,8 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { fetchProductById, createOrder, initChapaPayment, validateDiscount, Product as ApiProduct } from '../services/api';
+import {
+  fetchProductById,
+  createOrder,
+  initChapaPayment,
+  validateDiscount,
+  fetchProductFeedback,
+  submitProductFeedback,
+  likeProduct,
+  getWebSocketUrl,
+  ProductFeedbackItem,
+  ProductFeedbackSummary,
+  Product as ApiProduct,
+} from '../services/api';
 import { MIN_ORDER_QTY, useCart } from '../contexts/CartContext';
-import { Phone, MessageCircle, Package, Droplet, Wind, Shield, Activity, X, ShoppingCart, Send } from 'lucide-react';
+import { Phone, Package, Droplet, Wind, Shield, Activity, X, ShoppingCart, Send, Star, Heart } from 'lucide-react';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +30,17 @@ const ProductDetail = () => {
   const [couponCode, setCouponCode] = useState('');
   const [couponStatus, setCouponStatus] = useState<{ ok: boolean | null; message: string }>({ ok: null, message: '' });
   const [couponDiscountCents, setCouponDiscountCents] = useState(0);
+  const [feedbackSummary, setFeedbackSummary] = useState<ProductFeedbackSummary>({ averageRating: 0, ratingCount: 0, likeCount: 0 });
+  const [feedbackList, setFeedbackList] = useState<ProductFeedbackItem[]>([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+  const [feedbackForm, setFeedbackForm] = useState({
+    customerName: '',
+    rating: 5,
+    comment: '',
+  });
+  const [likeLoading, setLikeLoading] = useState(false);
   const { addItem } = useCart();
   
   // Order form state
@@ -52,6 +75,51 @@ const ProductDetail = () => {
 
     loadProduct();
   }, [id]);
+
+  const loadFeedback = useCallback(async (productId: number) => {
+    try {
+      setFeedbackLoading(true);
+      setFeedbackError(null);
+      const payload = await fetchProductFeedback(productId, 25);
+      setFeedbackSummary(payload.summary);
+      setFeedbackList(payload.feedback);
+    } catch (err) {
+      console.error('Failed to load feedback:', err);
+      setFeedbackError('Failed to load customer feedback.');
+    } finally {
+      setFeedbackLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!product?.id) return;
+    loadFeedback(product.id);
+  }, [product?.id, loadFeedback]);
+
+  useEffect(() => {
+    if (!product?.id) return;
+    const wsUrl = getWebSocketUrl();
+    if (!wsUrl) return;
+
+    const socket = new WebSocket(wsUrl);
+    socket.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload?.type === 'product_feedback_updated' && Number(payload?.data?.productId) === product.id) {
+          const summary = payload?.data?.summary as ProductFeedbackSummary | undefined;
+          if (summary) {
+            setFeedbackSummary(summary);
+          }
+          loadFeedback(product.id);
+        }
+      } catch (_error) {
+      }
+    };
+
+    return () => {
+      socket.close();
+    };
+  }, [product?.id, loadFeedback]);
 
   const handleOrderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,6 +224,48 @@ const ProductDetail = () => {
     addItem(product, 1);
     setCartNotice('Added to cart.');
     window.setTimeout(() => setCartNotice(null), 2000);
+  };
+
+  const handleSubmitFeedback = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!product) return;
+
+    if (feedbackForm.comment.trim().length < 3) {
+      setFeedbackError('Please enter feedback with at least 3 characters.');
+      return;
+    }
+
+    try {
+      setFeedbackSubmitting(true);
+      setFeedbackError(null);
+      const response = await submitProductFeedback(product.id, {
+        customerName: feedbackForm.customerName.trim() || undefined,
+        rating: feedbackForm.rating,
+        comment: feedbackForm.comment.trim(),
+      });
+
+      setFeedbackSummary(response.summary);
+      setFeedbackList((prev) => [response.feedback, ...prev].slice(0, 25));
+      setFeedbackForm({ customerName: '', rating: 5, comment: '' });
+    } catch (err: any) {
+      setFeedbackError(err?.message || 'Failed to submit feedback.');
+    } finally {
+      setFeedbackSubmitting(false);
+    }
+  };
+
+  const handleLike = async () => {
+    if (!product) return;
+
+    try {
+      setLikeLoading(true);
+      const response = await likeProduct(product.id);
+      setFeedbackSummary(response.summary);
+    } catch (err: any) {
+      setFeedbackError(err?.message || 'Failed to like this product.');
+    } finally {
+      setLikeLoading(false);
+    }
   };
   if (loading) {
     return (
@@ -627,6 +737,147 @@ const ProductDetail = () => {
               </Link>
             </div>
           </div>
+        </div>
+
+        <div className="mt-12 bg-white rounded-lg shadow-lg p-8">
+          <h2
+            className="text-3xl font-bold text-[#1A1A1A] mb-6"
+            style={{ fontFamily: 'Montserrat, sans-serif' }}
+          >
+            Customer Ratings, Likes & Feedback
+          </h2>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+            <div className="rounded-lg border border-gray-200 p-4 bg-[#F8F8F8]">
+              <p className="text-sm text-gray-600 mb-1">Average Rating</p>
+              <p className="text-2xl font-bold text-[#1A1A1A]">{feedbackSummary.averageRating.toFixed(1)} / 5</p>
+              <div className="flex items-center gap-1 mt-2">
+                {Array.from({ length: 5 }).map((_, index) => {
+                  const active = index < Math.round(feedbackSummary.averageRating);
+                  return (
+                    <Star
+                      key={`summary-star-${index}`}
+                      className={`w-4 h-4 ${active ? 'text-[#D92128] fill-[#D92128]' : 'text-gray-300'}`}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 p-4 bg-[#F8F8F8]">
+              <p className="text-sm text-gray-600 mb-1">Total Ratings</p>
+              <p className="text-2xl font-bold text-[#1A1A1A]">{feedbackSummary.ratingCount}</p>
+              <p className="text-xs text-gray-500 mt-2">From real customer submissions</p>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 p-4 bg-[#F8F8F8]">
+              <p className="text-sm text-gray-600 mb-1">Product Likes</p>
+              <div className="flex items-center justify-between gap-3 mt-1">
+                <p className="text-2xl font-bold text-[#1A1A1A]">{feedbackSummary.likeCount}</p>
+                <button
+                  type="button"
+                  onClick={handleLike}
+                  disabled={likeLoading}
+                  className="inline-flex items-center gap-2 bg-white border border-[#D92128] text-[#D92128] px-3 py-1.5 rounded-full text-sm font-medium hover:bg-[#fff1f1] disabled:opacity-60"
+                >
+                  <Heart className="w-4 h-4" />
+                  {likeLoading ? 'Liking...' : 'Like'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+            <form onSubmit={handleSubmitFeedback} className="rounded-lg border border-gray-200 p-5 bg-white space-y-4">
+              <h3 className="text-xl font-bold text-[#1A1A1A]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                Leave Feedback
+              </h3>
+
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Your Name (optional)</label>
+                <input
+                  type="text"
+                  value={feedbackForm.customerName}
+                  onChange={(e) => setFeedbackForm((prev) => ({ ...prev, customerName: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D92128] focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Rating</label>
+                <select
+                  value={feedbackForm.rating}
+                  onChange={(e) => setFeedbackForm((prev) => ({ ...prev, rating: Number(e.target.value) }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D92128] focus:border-transparent"
+                >
+                  <option value={5}>5 - Excellent</option>
+                  <option value={4}>4 - Very Good</option>
+                  <option value={3}>3 - Good</option>
+                  <option value={2}>2 - Fair</option>
+                  <option value={1}>1 - Poor</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Feedback</label>
+                <textarea
+                  value={feedbackForm.comment}
+                  onChange={(e) => setFeedbackForm((prev) => ({ ...prev, comment: e.target.value }))}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D92128] focus:border-transparent"
+                  placeholder="Tell us what you think about this product"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={feedbackSubmitting}
+                className="w-full bg-[#D92128] text-white py-2.5 rounded-lg font-medium hover:bg-[#b91a20] transition-colors disabled:opacity-60"
+              >
+                {feedbackSubmitting ? 'Submitting...' : 'Submit Feedback'}
+              </button>
+            </form>
+
+            <div className="rounded-lg border border-gray-200 p-5 bg-white">
+              <h3 className="text-xl font-bold text-[#1A1A1A] mb-4" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                Recent Customer Feedback
+              </h3>
+
+              {feedbackLoading ? (
+                <p className="text-gray-500">Loading feedback...</p>
+              ) : feedbackList.length === 0 ? (
+                <p className="text-gray-500">No feedback yet. Be the first to rate this product.</p>
+              ) : (
+                <div className="space-y-4 max-h-[360px] overflow-y-auto pr-2">
+                  {feedbackList.map((entry) => (
+                    <div key={entry.id} className="border-b border-gray-100 pb-4">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-semibold text-[#1A1A1A]">{entry.customerName || 'Anonymous'}</p>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: 5 }).map((_, index) => (
+                            <Star
+                              key={`entry-${entry.id}-star-${index}`}
+                              className={`w-4 h-4 ${index < entry.rating ? 'text-[#D92128] fill-[#D92128]' : 'text-gray-300'}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-700 mb-1">{entry.comment}</p>
+                      <p className="text-xs text-gray-500">
+                        {entry.createdAt ? new Date(entry.createdAt).toLocaleString() : ''}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {feedbackError && (
+            <div className="mb-8 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+              {feedbackError}
+            </div>
+          )}
         </div>
 
         <div className="mt-12 bg-white rounded-lg shadow-lg p-8">

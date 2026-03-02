@@ -29,6 +29,42 @@ export interface Product {
   createdAt: string | null;
 }
 
+export interface ProductFeedbackSummary {
+  averageRating: number;
+  ratingCount: number;
+  likeCount: number;
+}
+
+export interface ProductFeedbackItem {
+  id: number;
+  customerName: string;
+  rating: number;
+  comment: string;
+  createdAt: string | null;
+}
+
+export interface ProductFeedbackResponse {
+  productId: number;
+  summary: ProductFeedbackSummary;
+  feedback: ProductFeedbackItem[];
+}
+
+export interface ProductFeedbackPayload {
+  customerName?: string;
+  rating: number;
+  comment: string;
+}
+
+export interface TopRatedProduct {
+  productId: number;
+  name: string;
+  category: string;
+  coverImage: string;
+  averageRating: number;
+  ratingCount: number;
+  likeCount: number;
+}
+
 export interface ProductsResponse {
   data: Product[];
   meta: ProductListMeta;
@@ -127,6 +163,19 @@ export interface MessageRecord {
   logoUrl: string | null;
   status: string;
   createdAt: string;
+}
+
+export interface AdminProductFeedbackRow {
+  feedbackId: number;
+  productId: number;
+  productName: string;
+  customerName: string;
+  rating: number;
+  comment: string;
+  createdAt: string | null;
+  averageRating: number;
+  ratingCount: number;
+  likeCount: number;
 }
 
 export interface MessageCreatePayload {
@@ -346,6 +395,59 @@ export async function fetchProductById(id: string): Promise<Product | null> {
     console.error('Error fetching product:', error);
     throw error;
   }
+}
+
+export async function fetchProductFeedback(productId: number, limit = 20): Promise<ProductFeedbackResponse> {
+  const response = await apiFetch(`${API_BASE_URL}/products/${productId}/feedback?limit=${limit}`);
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch product feedback: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function submitProductFeedback(
+  productId: number,
+  payload: ProductFeedbackPayload,
+): Promise<{ feedback: ProductFeedbackItem; summary: ProductFeedbackSummary }> {
+  const response = await apiFetch(`${API_BASE_URL}/products/${productId}/feedback`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Failed to submit feedback: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function likeProduct(productId: number): Promise<{ productId: number; summary: ProductFeedbackSummary }> {
+  const response = await apiFetch(`${API_BASE_URL}/products/${productId}/like`, {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Failed to like product: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function getTopRatedProducts(limit = 3): Promise<TopRatedProduct[]> {
+  const response = await apiFetch(`${API_BASE_URL}/products/top-rated?limit=${limit}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch top-rated products: ${response.statusText}`);
+  }
+
+  const payload = await response.json().catch(() => ({}));
+  return Array.isArray(payload?.data) ? payload.data : [];
 }
 
 /**
@@ -857,6 +959,16 @@ export async function getMessages(limit = 10): Promise<MessageRecord[]> {
 
   const payload = await response.json().catch(() => ({}));
   return Array.isArray(payload?.data) ? payload.data : payload;
+}
+
+export async function getAdminProductFeedback(limit = 100): Promise<AdminProductFeedbackRow[]> {
+  const response = await fetch(`${API_BASE_URL}/products/feedback/table?limit=${limit}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch product feedback: ${response.statusText}`);
+  }
+
+  const payload = await response.json().catch(() => ({}));
+  return Array.isArray(payload?.data) ? payload.data : [];
 }
 
 export async function getDiscounts(): Promise<DiscountRecord[]> {

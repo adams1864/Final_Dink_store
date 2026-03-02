@@ -23,6 +23,7 @@ import ProductsPage from './pages/admin/ProductsPage';
 import InvoicesPage from './pages/admin/InvoicesPage';
 import MessagesPage from './pages/admin/MessagesPage';
 import DiscountsPage from './pages/admin/DiscountsPage';
+import FeedbacksPage from './pages/admin/FeedbacksPage';
 import AdminLogin from './pages/admin/Login';
 import { CartProvider } from './contexts/CartContext';
 
@@ -69,6 +70,7 @@ function App() {
             <Route path="products" element={<ProductsPage />} />
             <Route path="invoices" element={<InvoicesPage />} />
             <Route path="messages" element={<MessagesPage />} />
+            <Route path="feedback" element={<FeedbacksPage />} />
             <Route path="discounts" element={<DiscountsPage />} />
             <Route path="leads" element={<div>Leads page coming soon</div>} />
           </Route>

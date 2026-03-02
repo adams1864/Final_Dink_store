@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 // Swiper is used inside the HeroSection component; no direct imports needed here
 import football3 from '../assets/football3.jpg';
@@ -6,7 +7,8 @@ import football from '../assets/football.jpg';
 import football1 from '../assets/football1.jpg';
 import kits from '../assets/kits.jpg';
 import image4 from '../assets/image4.jpg';
-import { Flag, Globe, Plane, Droplet, Wind, Shield } from 'lucide-react';
+import { Flag, Globe, Plane, Droplet, Wind, Shield, Star, BadgePercent, Trophy, Heart } from 'lucide-react';
+import { getSalesTopProducts, getTopRatedProducts, type TopRatedProduct } from '../services/api';
 
 import HeroSection from '../components/HeroSection';
 import { FAQSection } from './FAQ';
@@ -15,6 +17,86 @@ import { FAQSection } from './FAQ';
 
 const Home = () => {
   const heroImages: string[] = [football3, football2, football];
+  const fallbackTopSellingProducts = [
+    {
+      id: 1,
+      name: 'Velocity Pro Home Kit',
+      category: 'Match Kits',
+      image: football3,
+      sold: '1,200+ sold',
+    },
+    {
+      id: 2,
+      name: 'Elite Training Jersey',
+      category: 'Training',
+      image: football2,
+      sold: '980+ sold',
+    },
+    {
+      id: 3,
+      name: 'Performance Sports Socks',
+      category: 'Accessories',
+      image: image4,
+      sold: '1,500+ sold',
+    },
+  ];
+
+  const [topSellingProducts, setTopSellingProducts] = useState(fallbackTopSellingProducts);
+  const [topRatedProducts, setTopRatedProducts] = useState<TopRatedProduct[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadTopSelling = async () => {
+      try {
+        const result = await getSalesTopProducts(30, 3);
+        if (!mounted || !Array.isArray(result.products) || result.products.length === 0) {
+          return;
+        }
+
+        const mapped = result.products.map((item) => ({
+          id: item.productId,
+          name: item.name,
+          category: 'Top Seller',
+          image: item.coverImage || image4,
+          sold: `${item.quantity} sold`,
+        }));
+
+        setTopSellingProducts(mapped);
+      } catch (error) {
+        console.error('Failed to load top selling products:', error);
+      }
+    };
+
+    loadTopSelling();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadTopRated = async () => {
+      try {
+        const data = await getTopRatedProducts(3);
+        if (!mounted) return;
+        setTopRatedProducts(data);
+      } catch (error) {
+        console.error('Failed to load top-rated products:', error);
+        if (mounted) {
+          setTopRatedProducts([]);
+        }
+      }
+    };
+
+    loadTopRated();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -149,6 +231,113 @@ const Home = () => {
                 Swift international shipping with trusted partners DHL, FedEx, and Ethiopian Airlines Cargo.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <h2
+            className="text-4xl font-bold text-center text-[#1A1A1A] mb-4"
+            style={{ fontFamily: 'Montserrat, sans-serif' }}
+          >
+            Customer Product Ratings
+          </h2>
+          <p className="text-center text-gray-600 mb-12">
+            Real customer ratings, review counts, and likes by product.
+          </p>
+
+          {topRatedProducts.length === 0 ? (
+            <div className="bg-[#F4F4F4] rounded-lg p-8 text-center text-gray-600">
+              No real customer ratings yet.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {topRatedProducts.map((product) => (
+                <Link key={product.productId} to={`/product/${product.productId}`} className="bg-[#F4F4F4] rounded-lg overflow-hidden">
+                  <img src={product.coverImage || image4} alt={product.name} className="w-full h-44 object-cover" />
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-[#1A1A1A] mb-3">{product.name}</h3>
+                    <div className="flex items-center gap-1 mb-4">
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <Star
+                          key={`${product.productId}-${index}`}
+                          className={`w-5 h-5 ${index < Math.round(product.averageRating) ? 'text-[#D92128] fill-[#D92128]' : 'text-gray-300'}`}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between text-sm text-gray-700">
+                      <span className="font-semibold text-[#1A1A1A]">{product.averageRating.toFixed(1)}/5</span>
+                      <span>{product.ratingCount} customer reviews</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-3 text-sm text-gray-700">
+                      <Heart className="w-4 h-4 text-[#D92128]" />
+                      <span>{product.likeCount} customers like this product</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="py-16 bg-[#1A1A1A] text-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto bg-white/5 border border-white/15 rounded-xl p-8 md:p-10 text-center">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <BadgePercent className="w-6 h-6 text-[#D92128]" />
+              <span className="text-sm uppercase tracking-wide text-gray-200">Customer Offer</span>
+            </div>
+            <h3
+              className="text-3xl font-bold mb-4"
+              style={{ fontFamily: 'Montserrat, sans-serif' }}
+            >
+              Buy 5 Kits, Get 10% Off
+            </h3>
+            <p className="text-gray-300 mb-8">
+              Perfect for teams and group orders. Buy 5 or more items and get an automatic 10% discount at checkout.
+            </p>
+            <Link
+              to="/shop"
+              className="inline-block bg-[#D92128] text-white px-10 py-3 rounded-full font-medium hover:bg-[#b91a20] transition-colors"
+            >
+              Shop Team Deals
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 bg-[#F4F4F4]">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-10">
+            <h2
+              className="text-4xl font-bold text-[#1A1A1A]"
+              style={{ fontFamily: 'Montserrat, sans-serif' }}
+            >
+              Top Sellings
+            </h2>
+            <Trophy className="w-8 h-8 text-[#D92128]" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {topSellingProducts.map((product) => (
+              <Link
+                key={product.name + product.id}
+                to={product.id ? `/product/${product.id}` : '/shop'}
+                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+              >
+                <img src={product.image} alt={product.name} className="w-full h-56 object-cover" />
+                <div className="p-5">
+                  <p className="text-sm text-[#D92128] font-semibold mb-1">{product.category}</p>
+                  <h3 className="text-xl font-bold text-[#1A1A1A] mb-2">{product.name}</h3>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Top seller</span>
+                    <span className="text-gray-600">{product.sold}</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>

@@ -10,6 +10,7 @@ import {
   IconMessageCircle,
   IconReorder,
   IconShoppingCart,
+  IconStar,
 } from '@tabler/icons-react';
 
 const menuItems = [
@@ -32,6 +33,11 @@ const menuItems = [
     label: 'Messages',
     icon: IconMessageCircle,
     path: '/admin/messages',
+  },
+  {
+    label: 'Feedback',
+    icon: IconStar,
+    path: '/admin/feedback',
   },
   {
     label: 'Discounts',
