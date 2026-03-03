@@ -7,8 +7,9 @@ import football from '../assets/football.jpg';
 import football1 from '../assets/football1.jpg';
 import kits from '../assets/kits.jpg';
 import image4 from '../assets/image4.jpg';
-import { Flag, Globe, Plane, Droplet, Wind, Shield, Star, BadgePercent, Trophy, Heart } from 'lucide-react';
-import { getSalesTopProducts, getTopRatedProducts, type TopRatedProduct } from '../services/api';
+import { Flag, Globe, Plane, Droplet, Wind, Shield, Star, BadgePercent, Trophy, Heart, ShoppingCart } from 'lucide-react';
+import { fetchProductById, getSalesTopProducts, getTopRatedProducts, type TopRatedProduct } from '../services/api';
+import { useCart } from '../contexts/CartContext';
 
 import HeroSection from '../components/HeroSection';
 import { FAQSection } from './FAQ';
@@ -43,6 +44,9 @@ const Home = () => {
 
   const [topSellingProducts, setTopSellingProducts] = useState(fallbackTopSellingProducts);
   const [topRatedProducts, setTopRatedProducts] = useState<TopRatedProduct[]>([]);
+  const [activeTopIndex, setActiveTopIndex] = useState(0);
+  const [addingTopProductId, setAddingTopProductId] = useState<number | null>(null);
+  const { addItem } = useCart();
 
   useEffect(() => {
     let mounted = true;
@@ -74,6 +78,51 @@ const Home = () => {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (topSellingProducts.length === 0) {
+      setActiveTopIndex(0);
+      return;
+    }
+
+    setActiveTopIndex((prev) => (prev >= topSellingProducts.length ? 0 : prev));
+  }, [topSellingProducts]);
+
+  useEffect(() => {
+    if (topSellingProducts.length <= 1) return;
+
+    const intervalId = setInterval(() => {
+      setActiveTopIndex((prev) => (prev + 1) % topSellingProducts.length);
+    }, 4500);
+
+    return () => clearInterval(intervalId);
+  }, [topSellingProducts]);
+
+  const currentTopSeller = topSellingProducts[activeTopIndex] ?? topSellingProducts[0];
+  const rotatedTopSellers = topSellingProducts.length
+    ? Array.from({ length: topSellingProducts.length }, (_, offset) =>
+        topSellingProducts[(activeTopIndex + offset) % topSellingProducts.length]
+      )
+    : [];
+  const currentTopSellerRank = topSellingProducts.findIndex((item) => item.id === currentTopSeller?.id) + 1;
+  const sideTopSellers = rotatedTopSellers.slice(1, 3);
+
+  const handleQuickAddTopSeller = async (productId: number) => {
+    if (!Number.isFinite(productId)) return;
+
+    try {
+      setAddingTopProductId(productId);
+      const product = await fetchProductById(String(productId));
+      if (!product) {
+        return;
+      }
+      addItem(product, 1);
+    } catch (error) {
+      console.error('Failed to quick add top seller:', error);
+    } finally {
+      setAddingTopProductId(null);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -235,15 +284,15 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="py-20 bg-white">
+      <section className="py-16 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <h2
-            className="text-4xl font-bold text-center text-[#1A1A1A] mb-4"
+            className="text-3xl md:text-4xl font-bold text-center text-[#1A1A1A] mb-2"
             style={{ fontFamily: 'Montserrat, sans-serif' }}
           >
-            Customer Product Ratings
+            Customer Feedback
           </h2>
-          <p className="text-center text-gray-600 mb-12">
+          <p className="text-center text-gray-600 mb-8 text-sm md:text-base">
             Real customer ratings, review counts, and likes by product.
           </p>
 
@@ -252,27 +301,35 @@ const Home = () => {
               No real customer ratings yet.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {topRatedProducts.map((product) => (
-                <Link key={product.productId} to={`/product/${product.productId}`} className="bg-[#F4F4F4] rounded-lg overflow-hidden">
-                  <img src={product.coverImage || image4} alt={product.name} className="w-full h-44 object-cover" />
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-[#1A1A1A] mb-3">{product.name}</h3>
-                    <div className="flex items-center gap-1 mb-4">
+            <div className="max-w-4xl mx-auto space-y-3">
+              {topRatedProducts.map((product, index) => (
+                <Link
+                  key={product.productId}
+                  to={`/product/${product.productId}`}
+                  className="group flex items-center gap-3 sm:gap-4 bg-white border border-[#EAEAEA] rounded-xl p-3 sm:p-4 hover:border-[#D9D9D9] hover:shadow-sm transition-all"
+                >
+                  <div className="relative shrink-0">
+                    <img src={product.coverImage || image4} alt={product.name} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg" />
+                    <span className="absolute -top-2 -right-2 bg-[#D92128] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow">
+                      #{index + 1}
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm sm:text-base font-bold text-[#1A1A1A] truncate group-hover:text-[#D92128] transition-colors">{product.name}</h3>
+                    <div className="flex items-center gap-1 mt-1 mb-2">
                       {Array.from({ length: 5 }).map((_, index) => (
                         <Star
                           key={`${product.productId}-${index}`}
-                          className={`w-5 h-5 ${index < Math.round(product.averageRating) ? 'text-[#D92128] fill-[#D92128]' : 'text-gray-300'}`}
+                          className={`w-3.5 h-3.5 ${index < Math.round(product.averageRating) ? 'text-[#D92128] fill-[#D92128]' : 'text-gray-300'}`}
                         />
                       ))}
+                      <span className="ml-1 text-xs sm:text-sm font-semibold text-[#1A1A1A]">{product.averageRating.toFixed(1)}/5</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm text-gray-700">
-                      <span className="font-semibold text-[#1A1A1A]">{product.averageRating.toFixed(1)}/5</span>
-                      <span>{product.ratingCount} customer reviews</span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-3 text-sm text-gray-700">
-                      <Heart className="w-4 h-4 text-[#D92128]" />
-                      <span>{product.likeCount} customers like this product</span>
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className="bg-[#F8F8F8] text-gray-700 border border-gray-200 px-2 py-1 rounded-full">{product.ratingCount} reviews</span>
+                      <span className="bg-[#F8F8F8] text-gray-700 border border-gray-200 px-2 py-1 rounded-full inline-flex items-center gap-1">
+                        <Heart className="w-3 h-3 text-[#D92128]" /> {product.likeCount} likes
+                      </span>
                     </div>
                   </div>
                 </Link>
@@ -310,35 +367,163 @@ const Home = () => {
 
       <section className="py-20 bg-[#F4F4F4]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-10">
-            <h2
-              className="text-4xl font-bold text-[#1A1A1A]"
-              style={{ fontFamily: 'Montserrat, sans-serif' }}
-            >
-              Top Sellings
-            </h2>
-            <Trophy className="w-8 h-8 text-[#D92128]" />
+          <div className="flex items-start justify-between mb-8">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.18em] text-[#8C1B1B] mb-2">BEST SELLERS</p>
+              <h2
+                className="text-3xl md:text-4xl font-bold text-[#1A1A1A]"
+                style={{ fontFamily: 'Montserrat, sans-serif' }}
+              >
+                Top Selling Products
+              </h2>
+              <p className="text-sm text-gray-600 mt-2">Most loved picks from recent customer orders.</p>
+            </div>
+            <div className="hidden sm:flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-b from-[#D9252C] to-[#8E1015] border border-[#8E1015] text-white shadow-md">
+              <Trophy className="w-4 h-4" />
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {topSellingProducts.map((product) => (
-              <Link
-                key={product.name + product.id}
-                to={product.id ? `/product/${product.id}` : '/shop'}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-              >
-                <img src={product.image} alt={product.name} className="w-full h-56 object-cover" />
-                <div className="p-5">
-                  <p className="text-sm text-[#D92128] font-semibold mb-1">{product.category}</p>
-                  <h3 className="text-xl font-bold text-[#1A1A1A] mb-2">{product.name}</h3>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Top seller</span>
-                    <span className="text-gray-600">{product.sold}</span>
+          {topSellingProducts.length === 0 ? (
+            <div className="bg-white border border-[#E6E6E6] rounded-xl p-8 text-center text-gray-600">
+              No top-selling products available right now.
+            </div>
+          ) : (
+            <>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+              <div className="lg:col-span-8">
+                <div className="relative block rounded-2xl overflow-hidden min-h-[300px] sm:min-h-[340px] bg-[#10151D] border border-[#2A303A] shadow-[0_18px_45px_rgba(0,0,0,0.18)]">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_30%,rgba(255,255,255,0.08),transparent_45%)]" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#0B1018] via-[#101821] to-[#101821]/70" />
+
+                  <div className="relative z-10 h-full p-6 sm:p-8 flex flex-col justify-between">
+                    <div>
+                      <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-b from-[#C61F27] to-[#891017] text-white px-3.5 py-1.5 text-sm font-semibold border border-[#E35A61] shadow-md">
+                        <Trophy className="w-3.5 h-3.5" />
+                        #{currentTopSellerRank > 0 ? currentTopSellerRank : 1} TOP SELLER
+                      </div>
+                    </div>
+
+                    <div className="max-w-[60%] sm:max-w-[52%]">
+                      <p className="mt-4 text-sm uppercase tracking-[0.18em] text-white/80">TOP SELLER</p>
+                      <h3 className="text-4xl sm:text-6xl font-extrabold leading-[0.95] text-white drop-shadow-md mt-2" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                        {currentTopSeller?.name || 'Top Seller'}
+                      </h3>
+                      <span className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/14 border border-white/25 text-white px-3 py-1.5 text-lg font-semibold">
+                        <ShoppingCart className="w-4 h-4" />
+                        {currentTopSeller?.sold || '—'}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!currentTopSeller?.id) return;
+                          void handleQuickAddTopSeller(currentTopSeller.id);
+                        }}
+                        disabled={!currentTopSeller?.id || addingTopProductId === currentTopSeller?.id}
+                        className="mt-5 inline-flex items-center rounded-full bg-gradient-to-b from-[#C9343C] to-[#921118] border border-[#EA6A72] text-white px-6 py-2.5 text-2xl font-semibold shadow-[0_0_28px_rgba(217,33,40,0.55)] hover:from-[#d63f47] hover:to-[#9e171e] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {addingTopProductId === currentTopSeller?.id ? 'Adding...' : 'Add to cart'}
+                      </button>
+
+                      <div>
+                        <Link
+                          to={currentTopSeller?.id ? `/product/${currentTopSeller.id}` : '/shop'}
+                          className="mt-3 inline-flex items-center text-white/90 hover:text-white underline underline-offset-4 text-sm"
+                        >
+                          View product
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pointer-events-none absolute right-0 bottom-0 w-[60%] sm:w-[52%] h-full flex items-end justify-end">
+                    <img
+                      src={currentTopSeller?.image || image4}
+                      alt={currentTopSeller?.name || 'Top seller'}
+                      className="max-h-[95%] w-auto object-contain drop-shadow-[0_18px_28px_rgba(0,0,0,0.55)]"
+                    />
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
+
+              </div>
+
+              <div className="lg:col-span-4 space-y-4">
+                {sideTopSellers.map((product) => {
+                  const rank = topSellingProducts.findIndex((item) => item.id === product.id) + 1;
+                  return (
+                    <div
+                      key={product.name + product.id}
+                      className="w-full text-left bg-white border border-[#E5E5E5] rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-[#D6D6D6] transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="relative shrink-0">
+                          <img src={product.image} alt={product.name} className="h-20 w-20 rounded-lg object-cover border border-gray-100" />
+                          <span className={`absolute -top-2 -left-2 h-8 w-8 rounded-full text-sm font-bold flex items-center justify-center shadow ${rank === 2 ? 'bg-gradient-to-b from-[#F0F0F0] to-[#BEBEBE] text-[#3E3E3E]' : 'bg-gradient-to-b from-[#F3D0A6] to-[#BF8452] text-[#5A351C]'}`}>
+                            {rank > 0 ? rank : '-'}
+                          </span>
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm text-gray-700"><span className="font-semibold text-[#A11219]">#{rank > 0 ? rank : '-'}</span> <span className="uppercase tracking-wide">BEST SELLER</span></p>
+                            <span className="shrink-0 rounded-full bg-[#F2F2F2] border border-[#E0E0E0] text-xs text-gray-700 px-2 py-1">
+                              {product.sold}
+                            </span>
+                          </div>
+                          <h4 className="text-[1.9rem]/[1.04] md:text-[2.05rem]/[1.02] font-extrabold text-[#1A1A1A] truncate mt-1" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                            {product.name}
+                          </h4>
+                          <div className="mt-1 text-sm text-gray-500">Top Seller</div>
+
+                          <div className="mt-2 h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
+                            <div className="h-full rounded-full bg-[#454B53]" style={{ width: rank === 2 ? '62%' : '45%' }} />
+                          </div>
+
+                          <div className="mt-3 flex items-center justify-between gap-2 text-sm">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const nextIndex = topSellingProducts.findIndex((item) => item.id === product.id);
+                                if (nextIndex >= 0) setActiveTopIndex(nextIndex);
+                              }}
+                              className="text-[#1A1A1A] font-medium hover:text-[#D92128] transition-colors"
+                            >
+                              view
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => void handleQuickAddTopSeller(product.id)}
+                              disabled={addingTopProductId === product.id}
+                              className="inline-flex items-center gap-1 text-[#1A1A1A] font-medium hover:text-[#D92128] transition-colors disabled:text-gray-400 disabled:cursor-not-allowed"
+                            >
+                              <ShoppingCart className="w-3.5 h-3.5" />
+                              <span>{addingTopProductId === product.id ? 'Adding...' : 'Quick Add'}</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {topSellingProducts.length > 1 && (
+              <div className="mt-4 flex items-center justify-center gap-2">
+                {topSellingProducts.map((product, index) => (
+                  <button
+                    key={product.name + product.id}
+                    type="button"
+                    onClick={() => setActiveTopIndex(index)}
+                    className={`h-2 rounded-full transition-all ${index === activeTopIndex ? 'w-8 bg-[#D92128]' : 'w-2 bg-gray-300 hover:bg-gray-400'}`}
+                    aria-label={`Go to top seller ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+            </>
+          )}
         </div>
       </section>
 
