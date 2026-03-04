@@ -129,9 +129,12 @@ const Home = () => {
 
     const loadTopRated = async () => {
       try {
-        const data = await getTopRatedProducts(5);
+        // request a larger candidate set then filter client-side
+        const data = await getTopRatedProducts(10);
         if (!mounted) return;
-        setTopRatedProducts(data);
+        // keep only products with averageRating > 4 and cap to 3 items
+        const filtered = Array.isArray(data) ? data.filter((p) => (p?.averageRating ?? 0) > 4) : [];
+        setTopRatedProducts(filtered.slice(0, 3));
       } catch (error) {
         console.error('Failed to load top-rated products:', error);
         if (mounted) {
