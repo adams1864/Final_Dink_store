@@ -788,54 +788,73 @@ const ProductDetail = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-            <form onSubmit={handleSubmitFeedback} className="rounded-lg border border-gray-200 p-5 bg-white space-y-4">
-              <h3 className="text-xl font-bold text-[#1A1A1A]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                Leave Feedback
-              </h3>
+            <form onSubmit={handleSubmitFeedback} className="rounded-lg border border-gray-200 p-4 bg-white space-y-3 max-w-md">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-[#1A1A1A]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                  Leave Feedback
+                </h3>
+                <span className="text-sm text-gray-500">{feedbackSummary.ratingCount} ratings</span>
+              </div>
 
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Your Name (optional)</label>
+                <label className="sr-only">Your Name (optional)</label>
                 <input
                   type="text"
+                  placeholder="Name (optional)"
                   value={feedbackForm.customerName}
                   onChange={(e) => setFeedbackForm((prev) => ({ ...prev, customerName: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D92128] focus:border-transparent"
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D92128] focus:border-transparent"
                 />
               </div>
 
               <div>
                 <label className="block text-sm text-gray-700 mb-1">Rating</label>
-                <select
-                  value={feedbackForm.rating}
-                  onChange={(e) => setFeedbackForm((prev) => ({ ...prev, rating: Number(e.target.value) }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D92128] focus:border-transparent"
-                >
-                  <option value={5}>5 - Excellent</option>
-                  <option value={4}>4 - Very Good</option>
-                  <option value={3}>3 - Good</option>
-                  <option value={2}>2 - Fair</option>
-                  <option value={1}>1 - Poor</option>
-                </select>
+                <div role="radiogroup" aria-label="Rating" className="flex items-center gap-1">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => setFeedbackForm((prev) => ({ ...prev, rating: index + 1 }))}
+                      aria-checked={feedbackForm.rating === index + 1}
+                      className="p-0 bg-transparent border-0"
+                    >
+                      <Star
+                        className={`w-5 h-5 ${index < feedbackForm.rating ? 'text-[#D92128] fill-[#D92128]' : 'text-gray-300'}`}
+                      />
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Feedback</label>
+                <label className="sr-only">Feedback</label>
                 <textarea
                   value={feedbackForm.comment}
                   onChange={(e) => setFeedbackForm((prev) => ({ ...prev, comment: e.target.value }))}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D92128] focus:border-transparent"
-                  placeholder="Tell us what you think about this product"
+                  rows={3}
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D92128] focus:border-transparent"
+                  placeholder="Short feedback (min 3 chars)"
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={feedbackSubmitting}
-                className="w-full bg-[#D92128] text-white py-2.5 rounded-lg font-medium hover:bg-[#b91a20] transition-colors disabled:opacity-60"
-              >
-                {feedbackSubmitting ? 'Submitting...' : 'Submit Feedback'}
-              </button>
+              {feedbackError && <p className="text-xs text-red-600">{feedbackError}</p>}
+
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={feedbackSubmitting}
+                  className="flex-1 bg-[#D92128] text-white py-2 rounded-md text-sm font-medium disabled:opacity-60"
+                >
+                  {feedbackSubmitting ? 'Submitting...' : 'Submit'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFeedbackForm({ customerName: '', rating: 5, comment: '' })}
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                >
+                  Clear
+                </button>
+              </div>
             </form>
 
             <div className="rounded-lg border border-gray-200 p-5 bg-white">

@@ -129,7 +129,7 @@ const Home = () => {
 
     const loadTopRated = async () => {
       try {
-        const data = await getTopRatedProducts(3);
+        const data = await getTopRatedProducts(5);
         if (!mounted) return;
         setTopRatedProducts(data);
       } catch (error) {
