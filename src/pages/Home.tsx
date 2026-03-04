@@ -7,7 +7,8 @@ import football from '../assets/football.jpg';
 import football1 from '../assets/football1.jpg';
 import kits from '../assets/kits.jpg';
 import image4 from '../assets/image4.jpg';
-import { Flag, Globe, Plane, Droplet, Wind, Shield, Star, BadgePercent, Trophy, Heart, ShoppingCart } from 'lucide-react';
+import { Flag, Globe, Plane, Droplet, Wind, Shield, BadgePercent, Trophy, Heart, ShoppingCart } from 'lucide-react';
+import RatingStars from '../components/RatingStars';
 import { fetchProductById, getSalesTopProducts, getTopRatedProducts, type TopRatedProduct } from '../services/api';
 import { useCart } from '../contexts/CartContext';
 
@@ -304,12 +305,12 @@ const Home = () => {
               No real customer ratings yet.
             </div>
           ) : (
-            <div className="max-w-4xl mx-auto space-y-3">
+            <div className="max-w-4xl mx-auto flex gap-3 overflow-x-auto py-2">
               {topRatedProducts.map((product, index) => (
                 <Link
                   key={product.productId}
                   to={`/product/${product.productId}`}
-                  className="group flex items-center gap-3 sm:gap-4 bg-white border border-[#EAEAEA] rounded-xl p-3 sm:p-4 hover:border-[#D9D9D9] hover:shadow-sm transition-all"
+                  className="group flex items-center gap-3 sm:gap-4 bg-white border border-[#EAEAEA] rounded-xl p-3 sm:p-4 hover:border-[#D9D9D9] hover:shadow-sm transition-all min-w-[260px] flex-shrink-0"
                 >
                   <div className="relative shrink-0">
                     <img src={product.coverImage || image4} alt={product.name} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg" />
@@ -320,12 +321,7 @@ const Home = () => {
                   <div className="min-w-0 flex-1">
                     <h3 className="text-sm sm:text-base font-bold text-[#1A1A1A] truncate group-hover:text-[#D92128] transition-colors">{product.name}</h3>
                     <div className="flex items-center gap-1 mt-1 mb-2">
-                      {Array.from({ length: 5 }).map((_, index) => (
-                        <Star
-                          key={`${product.productId}-${index}`}
-                          className={`w-3.5 h-3.5 ${index < Math.round(product.averageRating) ? 'text-[#D92128] fill-[#D92128]' : 'text-gray-300'}`}
-                        />
-                      ))}
+                      <RatingStars rating={product.averageRating} starClass="w-3.5 h-3.5" />
                       <span className="ml-1 text-xs sm:text-sm font-semibold text-[#1A1A1A]">{product.averageRating.toFixed(1)}/5</span>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-xs">

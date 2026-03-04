@@ -14,7 +14,8 @@ import {
   Product as ApiProduct,
 } from '../services/api';
 import { MIN_ORDER_QTY, useCart } from '../contexts/CartContext';
-import { Phone, Package, Droplet, Wind, Shield, Activity, X, ShoppingCart, Send, Star, Heart } from 'lucide-react';
+import { Phone, Package, Droplet, Wind, Shield, Activity, X, ShoppingCart, Send, Heart } from 'lucide-react';
+import RatingStars, { StarSVG } from '../components/RatingStars';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -37,7 +38,7 @@ const ProductDetail = () => {
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
   const [feedbackForm, setFeedbackForm] = useState({
     customerName: '',
-    rating: 5,
+    rating: 0,
     comment: '',
   });
   const [likeLoading, setLikeLoading] = useState(false);
@@ -246,7 +247,7 @@ const ProductDetail = () => {
 
       setFeedbackSummary(response.summary);
       setFeedbackList((prev) => [response.feedback, ...prev].slice(0, 25));
-      setFeedbackForm({ customerName: '', rating: 5, comment: '' });
+      setFeedbackForm({ customerName: '', rating: 0, comment: '' });
     } catch (err: any) {
       setFeedbackError(err?.message || 'Failed to submit feedback.');
     } finally {
@@ -752,15 +753,7 @@ const ProductDetail = () => {
               <p className="text-sm text-gray-600 mb-1">Average Rating</p>
               <p className="text-2xl font-bold text-[#1A1A1A]">{feedbackSummary.averageRating.toFixed(1)} / 5</p>
               <div className="flex items-center gap-1 mt-2">
-                {Array.from({ length: 5 }).map((_, index) => {
-                  const active = index < Math.round(feedbackSummary.averageRating);
-                  return (
-                    <Star
-                      key={`summary-star-${index}`}
-                      className={`w-4 h-4 ${active ? 'text-[#D92128] fill-[#D92128]' : 'text-gray-300'}`}
-                    />
-                  );
-                })}
+                <RatingStars rating={feedbackSummary.averageRating} starClass="w-4 h-4" />
               </div>
             </div>
 
@@ -818,8 +811,9 @@ const ProductDetail = () => {
                       aria-checked={feedbackForm.rating === index + 1}
                       className="p-0 bg-transparent border-0"
                     >
-                      <Star
-                        className={`w-5 h-5 ${index < feedbackForm.rating ? 'text-[#D92128] fill-[#D92128]' : 'text-gray-300'}`}
+                      <StarSVG
+                        filled={index < feedbackForm.rating}
+                        className={`w-5 h-5 ${index < feedbackForm.rating ? 'text-[#D92128]' : 'text-gray-300'}`}
                       />
                     </button>
                   ))}
@@ -849,7 +843,7 @@ const ProductDetail = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFeedbackForm({ customerName: '', rating: 5, comment: '' })}
+                  onClick={() => setFeedbackForm({ customerName: '', rating: 0, comment: '' })}
                   className="px-3 py-2 border border-gray-300 rounded-md text-sm"
                 >
                   Clear
@@ -874,9 +868,10 @@ const ProductDetail = () => {
                         <p className="font-semibold text-[#1A1A1A]">{entry.customerName || 'Anonymous'}</p>
                         <div className="flex items-center gap-1">
                           {Array.from({ length: 5 }).map((_, index) => (
-                            <Star
+                            <StarSVG
                               key={`entry-${entry.id}-star-${index}`}
-                              className={`w-4 h-4 ${index < entry.rating ? 'text-[#D92128] fill-[#D92128]' : 'text-gray-300'}`}
+                              filled={index < entry.rating}
+                              className={`w-4 h-4 ${index < entry.rating ? 'text-[#D92128]' : 'text-gray-300'}`}
                             />
                           ))}
                         </div>
