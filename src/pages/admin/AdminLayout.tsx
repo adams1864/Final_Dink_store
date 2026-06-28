@@ -1,7 +1,6 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { getCurrentUser } from '../../services/auth';
-import { adminLogout } from '../../services/auth';
+import { getCurrentUser, logout } from '../../services/auth';
 import {
   IconBrandProducthunt,
   IconDiscount2,
@@ -11,6 +10,7 @@ import {
   IconReorder,
   IconShoppingCart,
   IconStar,
+  IconUsers,
 } from '@tabler/icons-react';
 
 const menuItems = [
@@ -45,6 +45,11 @@ const menuItems = [
     path: '/admin/discounts',
   },
   {
+    label: 'Customers',
+    icon: IconUsers,
+    path: '/admin/customers',
+  },
+  {
     label: 'Invoices',
     icon: IconFileInvoice,
     path: '/admin/invoices',
@@ -74,7 +79,7 @@ export default function AdminLayout() {
       try {
         const data = await getCurrentUser();
         if (cancelled) return;
-        if (!data?.user) {
+        if (!data?.user || data.user.role !== 'admin') {
           navigate('/admin/login');
         }
       } catch (err) {
@@ -106,7 +111,7 @@ export default function AdminLayout() {
             <div>
               <button
                 onClick={async () => {
-                  await adminLogout();
+                  await logout();
                   navigate('/admin/login');
                 }}
                 className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm px-3 py-1.5 rounded-md shadow-sm"

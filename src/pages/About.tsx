@@ -1,5 +1,5 @@
 import { Award, Heart, Target } from 'lucide-react';
-import image5 from '../assets/image5.jpg';
+import { aboutImage } from '../assets';
 import { FAQSection } from './FAQ';
 const About = () => {
   return (
@@ -58,7 +58,7 @@ const About = () => {
               <div className="flex md:justify-end">
                 <div className="relative w-[500px] h-[500px] lg:h-[650px]">
                 <img
-                  src={image5}
+                  src={aboutImage}
                   alt="Our Workshop"
                   className="absolute inset-0 w-full h-full object-cover rounded-xl shadow-2xl"
                 />

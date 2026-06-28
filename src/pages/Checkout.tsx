@@ -1,11 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { createOrder, initChapaPayment, formatPrice, validateDiscount } from '../services/api';
 import { MIN_ORDER_QTY, useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const Checkout = () => {
   const { items, total, clear, updateQuantity, removeItem } = useCart();
+  const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -21,6 +23,15 @@ const Checkout = () => {
     deliveryPreferences: '',
     notes: '',
   });
+
+  useEffect(() => {
+    if (user?.role !== 'customer') return;
+    setForm((prev) => ({
+      ...prev,
+      customerName: prev.customerName || user.name || '',
+      customerEmail: prev.customerEmail || user.email || '',
+    }));
+  }, [user]);
 
   const totalQty = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
   const subtotalCents = useMemo(() => Math.round(total * 100), [total]);

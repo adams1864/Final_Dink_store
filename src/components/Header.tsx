@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import logo from '../assets/logo1.png';
+import { brandLogo } from '../assets';
+import { SITE } from '../config/site';
 import { Link, useLocation } from 'react-router-dom';
-import { Send, Menu, X, ShoppingCart } from 'lucide-react';
+import { Send, Menu, X, ShoppingCart, User, LogOut } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
 import CartDrawer from './CartDrawer';
 
 const Header = () => {
@@ -11,7 +13,9 @@ const Header = () => {
   const [cartOpen, setCartOpen] = useState(false);
   const location = useLocation();
   const { items } = useCart();
+  const { user, logout } = useAuth();
   const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const isCustomer = user?.role === 'customer';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -36,15 +40,15 @@ const Header = () => {
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-3">
             <img
-              src={logo}
-              alt="Dink Sports Wear"
-              className="h-12 w-12 object-contain"
+              src={brandLogo}
+              alt={SITE.name}
+              className="h-12 w-12 object-contain rounded-md"
             />
             <div className="flex flex-col">
               <span className="text-2xl font-bold text-[#1A1A1A]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                dink
+                MYT
               </span>
-              <span className="text-xs text-[#1A1A1A] -mt-1">SPORTS WEAR</span>
+              <span className="text-xs text-[#1A1A1A] -mt-1">{SITE.tagline.toUpperCase()}</span>
             </div>
           </Link>
 
@@ -126,6 +130,37 @@ const Header = () => {
                 </span>
               )}
             </button>
+            {isCustomer ? (
+              <div className="flex items-center gap-2">
+                <span className="hidden lg:inline text-sm text-gray-700 max-w-[120px] truncate">
+                  {user.name || user.email}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void logout()}
+                  className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white/90 px-3 py-2 text-sm font-medium text-[#1A1A1A] hover:bg-gray-100"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white/90 px-3 py-2 text-sm font-medium text-[#1A1A1A] hover:bg-gray-100"
+                >
+                  <User className="w-4 h-4" />
+                  Login
+                </Link>
+                <Link
+                  to="/signup"
+                  className="hidden sm:inline-flex rounded-full border border-[#D92128] text-[#D92128] px-3 py-2 text-sm font-medium hover:bg-[#D92128] hover:text-white transition-colors"
+                >
+                  Sign up
+                </Link>
+              </div>
+            )}
             <Link
               to="/contact"
               className="bg-[#D92128] text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-[#b91a20] transition-colors"
@@ -133,7 +168,7 @@ const Header = () => {
               Get a Quote
             </Link>
             <a
-              href="https://t.me/dinksportw"
+              href={SITE.telegramUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="bg-[#0088cc] p-2 rounded-full hover:bg-[#007ab8] transition-colors"
@@ -234,6 +269,36 @@ const Header = () => {
                 )}
               </button>
 
+              {isCustomer ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    void logout();
+                  }}
+                  className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-base font-medium text-[#1A1A1A] hover:bg-gray-100 text-left"
+                >
+                  Logout ({user.name || user.email})
+                </button>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-base font-medium text-center text-[#1A1A1A] hover:bg-gray-100"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/signup"
+                    onClick={() => setMobileOpen(false)}
+                    className="px-3 py-2 rounded-lg border border-[#D92128] bg-white text-base font-medium text-center text-[#D92128] hover:bg-[#D92128] hover:text-white"
+                  >
+                    Sign up
+                  </Link>
+                </div>
+              )}
+
               <div className="flex items-center gap-3 pt-3">
                 <Link
                   to="/contact"
@@ -243,7 +308,7 @@ const Header = () => {
                   Get a Quote
                 </Link>
                 <a
-                  href="https://t.me/dinksportw"
+                  href={SITE.telegramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="bg-[#0088cc] p-2 rounded-full hover:bg-[#007ab8]"

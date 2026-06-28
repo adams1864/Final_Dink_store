@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Truck, Factory, Ruler } from 'lucide-react';
+import { SITE } from '../config/site';
+import SupportContactCard from '../components/SupportContactCard';
 
 type TabType = 'logistics' | 'manufacturing' | 'sizing';
 
@@ -33,18 +35,19 @@ const Support = () => {
             className="text-4xl md:text-6xl font-bold uppercase mb-4 text-[#D92128]"
             style={{ fontFamily: 'Montserrat, sans-serif' }}
           >
-            Support Hub
+            {SITE.name} Support
           </h1>
           <p className="text-xl text-gray-700">
-            Everything you need to know about our products and services
+            Logistics, sizing, and help — delivered across Ethiopia
           </p>
         </div>
       </div>
 
       <div className="container mx-auto px-6 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-4 sticky top-24">
+          <div className="lg:col-span-1 space-y-4">
+            <SupportContactCard className="sticky top-24" />
+            <div className="bg-white rounded-lg shadow-md p-4">
               <button
                 onClick={() => setActiveTab('logistics')}
                 className={`w-full text-left px-4 py-3 rounded-lg mb-2 transition-colors flex items-center gap-3 ${
@@ -86,14 +89,37 @@ const Support = () => {
               {activeTab === 'logistics' && (
                 <div>
                   <h2
-                    className="text-3xl font-bold text-[#1A1A1A] mb-6"
+                    className="text-3xl font-bold text-[#1A1A1A] mb-2"
                     style={{ fontFamily: 'Montserrat, sans-serif' }}
                   >
-                    Shipping & Logistics
+                    {SITE.logisticsTitle}
                   </h2>
+                  <p className="text-gray-600 mb-6">{SITE.logisticsDescription}</p>
+
                   <div className="mb-8">
                     <h3 className="text-xl font-bold text-[#1A1A1A] mb-4">
-                      Our Shipping Partners
+                      Delivery cities in Ethiopia
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                      {SITE.deliveryCities.map((city) => (
+                        <div
+                          key={city.name}
+                          className="bg-[#F4F4F4] px-5 py-4 rounded-lg border border-gray-200"
+                        >
+                          <p className="font-bold text-[#1A1A1A]">{city.name}</p>
+                          {city.note ? <p className="text-sm text-gray-600 mt-1">{city.note}</p> : null}
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-gray-700 text-sm">
+                      Orders are dispatched from Addis Ababa and delivered to the cities above. Contact us on
+                      Telegram or phone for exact timing in your area.
+                    </p>
+                  </div>
+
+                  <div className="mb-8">
+                    <h3 className="text-xl font-bold text-[#1A1A1A] mb-4">
+                      International shipping partners
                     </h3>
                     <div className="flex flex-wrap gap-4 mb-6">
                       <div className="bg-[#F4F4F4] px-6 py-3 rounded-lg font-medium">DHL</div>
@@ -101,46 +127,6 @@ const Support = () => {
                       <div className="bg-[#F4F4F4] px-6 py-3 rounded-lg font-medium">
                         Ethiopian Airlines Cargo
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="mb-8">
-                    <h3 className="text-xl font-bold text-[#1A1A1A] mb-4">
-                      Estimated Delivery Times
-                    </h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-[#F4F4F4]">
-                          <tr>
-                            <th className="px-4 py-3 text-left font-bold text-[#1A1A1A]">Region</th>
-                            <th className="px-4 py-3 text-left font-bold text-[#1A1A1A]">
-                              Estimated Time
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                          <tr>
-                            <td className="px-4 py-3">East Africa</td>
-                            <td className="px-4 py-3 text-gray-600">3-5 Days</td>
-                          </tr>
-                          <tr>
-                            <td className="px-4 py-3">USA</td>
-                            <td className="px-4 py-3 text-gray-600">7-10 Days</td>
-                          </tr>
-                          <tr>
-                            <td className="px-4 py-3">Europe</td>
-                            <td className="px-4 py-3 text-gray-600">5-7 Days</td>
-                          </tr>
-                          <tr>
-                            <td className="px-4 py-3">Middle East</td>
-                            <td className="px-4 py-3 text-gray-600">4-6 Days</td>
-                          </tr>
-                          <tr>
-                            <td className="px-4 py-3">Asia</td>
-                            <td className="px-4 py-3 text-gray-600">8-12 Days</td>
-                          </tr>
-                        </tbody>
-                      </table>
                     </div>
                   </div>
 

@@ -1,22 +1,32 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { ReactNode } from 'react';
 import type { Product } from '../services/api';
+import { useAuth } from './AuthContext';
+import type { AuthUser } from '../services/auth';
+import {
+  cartStorageKey,
+  readCartItems,
+  writeCartItems,
+  mergeCartItems,
+  GUEST_CART_KEY,
+  type CartItem,
+} from '../utils/cartStorage';
 
-const STORAGE_KEY = 'dink_cart';
+export type { CartItem };
 
 export const MIN_ORDER_QTY = 3;
-
-export interface CartItem {
-  productId: number;
-  name: string;
-  price: number;
-  quantity: number;
-  image?: string | null;
-}
 
 interface CartContextValue {
   items: CartItem[];
   total: number;
+  cartReady: boolean;
   addItem: (product: Product, quantity?: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
   removeItem: (productId: number) => void;
@@ -25,91 +35,120 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 
-function readStoredItems(): CartItem[] {
-  if (typeof window === 'undefined') return [];
+const PENDING_KEY = '__pending__';
+
+function notifyCartChanged() {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((item) =>
-      item &&
-      typeof item.productId === 'number' &&
-      typeof item.name === 'string' &&
-      typeof item.price === 'number' &&
-      typeof item.quantity === 'number'
-    );
+    window.dispatchEvent(new CustomEvent('cart:changed'));
   } catch {
-    return [];
+    // ignore
   }
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => readStoredItems());
+  const { user, loading: authLoading } = useAuth();
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [storageKey, setStorageKey] = useState(PENDING_KEY);
+  const [cartReady, setCartReady] = useState(false);
+
+  const storageKeyRef = useRef(PENDING_KEY);
+  const itemsRef = useRef<CartItem[]>([]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    itemsRef.current = items;
   }, [items]);
+
+  useEffect(() => {
+    if (authLoading) {
+      setCartReady(false);
+      return;
+    }
+
+    const nextKey = cartStorageKey(user);
+    const prevKey = storageKeyRef.current;
+
+    if (prevKey !== PENDING_KEY && prevKey !== nextKey) {
+      writeCartItems(prevKey, itemsRef.current);
+    }
+
+    let loaded = readCartItems(nextKey);
+
+    if (prevKey === GUEST_CART_KEY && nextKey !== GUEST_CART_KEY && itemsRef.current.length > 0) {
+      loaded = mergeCartItems(loaded, itemsRef.current);
+      writeCartItems(GUEST_CART_KEY, []);
+    }
+
+    storageKeyRef.current = nextKey;
+    setStorageKey(nextKey);
+    setItems(loaded);
+    setCartReady(true);
+    notifyCartChanged();
+  }, [authLoading, user?.id, user?.email, user?.role]);
+
+  useEffect(() => {
+    if (!cartReady || storageKey === PENDING_KEY) return;
+    writeCartItems(storageKey, items);
+  }, [items, storageKey, cartReady]);
 
   const total = useMemo(
     () => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
-    [items]
+    [items],
   );
 
   const addItem = (product: Product, quantity = 1) => {
     const normalizedQty = Math.max(Number(quantity) || 1, 1);
-    // debug logs to help diagnose unexpected quantities
-    try {
-      // eslint-disable-next-line no-console
-      console.debug('[Cart] addItem called', { id: (product as any).id, passed: quantity, normalizedQty });
-    } catch {}
-    const image = product.images?.[0] ?? product.coverImage ?? product.image1 ?? product.image2 ?? null;
-    const pid = Number((product as any).id);
+    const image =
+      product.images?.[0] ?? product.coverImage ?? product.image1 ?? product.image2 ?? null;
+    const pid = Number(product.id);
 
     setItems((prev) => {
       const existing = prev.find((item) => item.productId === pid);
-      if (existing) {
-        return prev.map((item) =>
-          item.productId === pid
-            ? { ...item, quantity: item.quantity + normalizedQty }
-            : item
-        );
-      }
-      return [
-        ...prev,
-        {
-          productId: pid,
-          name: product.name,
-          price: Number(product.price) || 0,
-          quantity: normalizedQty,
-          image,
-        },
-      ];
+      const next = existing
+        ? prev.map((item) =>
+            item.productId === pid
+              ? { ...item, quantity: item.quantity + normalizedQty }
+              : item,
+          )
+        : [
+            ...prev,
+            {
+              productId: pid,
+              name: product.name,
+              price: Number(product.price) || 0,
+              quantity: normalizedQty,
+              image,
+            },
+          ];
+      return next;
     });
 
-    try {
-      window.dispatchEvent(new CustomEvent('cart:changed'));
-    } catch {}
+    notifyCartChanged();
   };
 
   const updateQuantity = (productId: number, quantity: number) => {
     const normalizedQty = Math.max(quantity, 1);
     setItems((prev) =>
       prev.map((item) =>
-        item.productId === productId ? { ...item, quantity: normalizedQty } : item
-      )
+        item.productId === productId ? { ...item, quantity: normalizedQty } : item,
+      ),
     );
+    notifyCartChanged();
   };
 
   const removeItem = (productId: number) => {
     setItems((prev) => prev.filter((item) => item.productId !== productId));
+    notifyCartChanged();
   };
 
-  const clear = () => setItems([]);
+  const clear = () => {
+    setItems([]);
+    notifyCartChanged();
+  };
 
   return (
-    <CartContext.Provider value={{ items, total, addItem, updateQuantity, removeItem, clear }}>
+    <CartContext.Provider
+      value={{ items, total, cartReady, addItem, updateQuantity, removeItem, clear }}
+    >
       {children}
     </CartContext.Provider>
   );

@@ -14,16 +14,16 @@ export interface Product {
   isBestSeller?: boolean;
 }
 
-import football from '../assets/football.jpg';
-import football1 from '../assets/football1.jpg';
-import football2 from '../assets/football2.jpg';
-import football3 from '../assets/football3.jpg';
-import football4 from '../assets/football4.jpg';
-import kits from '../assets/kits.jpg';
-import image1 from '../assets/image1.jpg';
-import image2 from '../assets/image2.jpg';
-import image3 from '../assets/image3.jpg';
-import image4 from '../assets/image4.jpg';
+import {
+  photo1,
+  photo2,
+  photo3,
+  photo4,
+  photo5,
+  photo6,
+  photo7,
+  photo8,
+} from '../assets';
 
 export const products: Product[] = [
   {
@@ -37,7 +37,7 @@ export const products: Product[] = [
     weight: '140gsm',
     fit: 'Athletic Slim',
     features: ['Moisture Wicking', '4-Way Stretch', 'UV Protection', 'Anti-Bacterial', 'Breathable Mesh'],
-    images: [football3],
+    images: [photo1],
     isNew: true,
     isBestSeller: true,
   },
@@ -52,7 +52,7 @@ export const products: Product[] = [
     weight: '130gsm',
     fit: 'Regular',
     features: ['Quick Dry', 'Stretch Fabric', 'Moisture Control', 'Odor Resistant'],
-    images: [football2],
+    images: [photo2],
     isBestSeller: true,
   },
   {
@@ -66,12 +66,12 @@ export const products: Product[] = [
     weight: '150gsm',
     fit: 'Athletic',
     features: ['Elastic Waistband', 'Side Pockets', 'Compression Liner', 'Lightweight'],
-    images: [football4],
+    images: [photo3],
     isNew: true,
   },
   {
     id: '4',
-    name: 'Women\'s Performance Kit',
+    name: "Women's Performance Kit",
     category: 'match-kits',
     gender: 'women',
     sku: 'DNK-004',
@@ -80,7 +80,7 @@ export const products: Product[] = [
     weight: '135gsm',
     fit: 'Athletic Fit',
     features: ['Feminine Cut', 'Moisture Wicking', 'Four-Way Stretch', 'Flatlock Seams'],
-    images: [football1],
+    images: [photo4],
     isBestSeller: true,
   },
   {
@@ -94,7 +94,7 @@ export const products: Product[] = [
     weight: '125gsm',
     fit: 'Relaxed',
     features: ['Soft Touch', 'Easy Care', 'Durable Stitching', 'Breathable'],
-    images: [football],
+    images: [photo5],
     isNew: true,
   },
   {
@@ -108,7 +108,7 @@ export const products: Product[] = [
     weight: '280gsm',
     fit: 'Regular',
     features: ['Full Zip', 'Side Pockets', 'Elastic Cuffs', 'Thermal Insulation'],
-    images: [kits],
+    images: [photo6],
   },
   {
     id: '7',
@@ -121,47 +121,21 @@ export const products: Product[] = [
     weight: '160gsm',
     fit: 'Regular Fit',
     features: ['Padded Elbows', 'Reinforced Shoulders', 'Grip Zones', 'Extra Length'],
-    images: [image2],
+    images: [photo7],
   },
   {
     id: '8',
-    name: 'Compression Base Layer',
-    category: 'training',
-    gender: 'unisex',
-    sku: 'DNK-008',
-    description: 'Second-skin compression layer that enhances circulation and reduces muscle fatigue.',
-    material: '80% Polyester, 20% Spandex',
-    weight: '180gsm',
-    fit: 'Compression',
-    features: ['Graduated Compression', 'Muscle Support', 'Temperature Control', 'Seamless Design'],
-    images: [image3],
-    isBestSeller: true,
-  },
-  {
-    id: '9',
-    name: 'Casual Sports Polo',
-    category: 'casual',
-    gender: 'unisex',
-    sku: 'DNK-009',
-    description: 'Classic polo design with modern performance fabric, perfect for off-field wear.',
-    material: '95% Cotton, 5% Elastane',
-    weight: '200gsm',
-    fit: 'Regular',
-    features: ['Soft Cotton Blend', 'Collar Design', 'Button Placket', 'Breathable'],
-    images: [image1],
-  },
-  {
-    id: '10',
     name: 'Performance Sports Socks',
     category: 'accessories',
     gender: 'unisex',
-    sku: 'DNK-010',
+    sku: 'DNK-008',
     description: 'Technical sports socks with arch support and cushioned sole for all-day comfort.',
     material: '70% Cotton, 25% Polyester, 5% Elastane',
     weight: '50gsm',
     fit: 'Stretchable',
     features: ['Arch Support', 'Cushioned Sole', 'Moisture Wicking', 'Anti-Slip Grip'],
-    images: [image4],
+    images: [photo8],
     isNew: true,
+    isBestSeller: true,
   },
 ];

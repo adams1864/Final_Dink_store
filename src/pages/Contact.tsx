@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { Mail, Phone, MapPin } from 'lucide-react';
+import { Phone, Send } from 'lucide-react';
 import { createMessage } from '../services/api';
+import { SITE, phoneTelLink } from '../config/site';
+import { brandLogo } from '../assets';
+import SupportContactCard from '../components/SupportContactCard';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -25,8 +28,11 @@ const Contact = () => {
       });
       setStatus({ ok: true, message: 'Thank you for contacting us! We will respond shortly.' });
       setFormData({ name: '', email: '', subject: '', message: '' });
-    } catch (err: any) {
-      setStatus({ ok: false, message: err?.message || 'Something went wrong. Please try again.' });
+    } catch (err: unknown) {
+      setStatus({
+        ok: false,
+        message: err instanceof Error ? err.message : 'Something went wrong. Please try again.',
+      });
     }
   };
 
@@ -35,69 +41,23 @@ const Contact = () => {
       <div className="hero-bg py-16 relative">
         <div className="absolute inset-0 bg-white/85"></div>
         <div className="container mx-auto px-6 text-center relative z-10">
+          <img src={brandLogo} alt={SITE.name} className="h-16 w-16 object-contain mx-auto mb-4 rounded-lg bg-white/80 p-1" />
           <h1
             className="text-4xl md:text-6xl font-bold uppercase mb-4 text-[#D92128]"
             style={{ fontFamily: 'Montserrat, sans-serif' }}
           >
-            Let's Talk Business
+            Contact {SITE.name}
           </h1>
-          <p className="text-xl text-gray-700">
-            Get in touch with our team today
-          </p>
+          <p className="text-xl text-gray-700">Get in touch with our team today</p>
         </div>
       </div>
 
       <div className="container mx-auto px-6 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           <div>
-            <h2
-              className="text-3xl font-bold text-[#1A1A1A] mb-8"
-              style={{ fontFamily: 'Montserrat, sans-serif' }}
-            >
-              Contact Information
-            </h2>
+            <SupportContactCard />
 
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <div className="bg-[#D92128] p-3 rounded-lg">
-                  <MapPin className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-[#1A1A1A] mb-1">Headquarters</h3>
-                  <p className="text-gray-600">
-                    4kilo Around Arda Subcity<br />
-                    Amroge Chicken Building, 3rd Floor
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <div className="bg-[#D92128] p-3 rounded-lg">
-                  <Phone className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-[#1A1A1A] mb-1">Phone Numbers</h3>
-                  <p className="text-gray-600">
-                    <a href="tel:+251984888877" className="text-[#D92128] hover:underline">+251 984 888 877</a><br />
-                    <a href="tel:+251904391587" className="text-[#D92128] hover:underline">+251 904 39 15 87</a>
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <div className="bg-[#D92128] p-3 rounded-lg">
-                  <Mail className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-[#1A1A1A] mb-1">Email</h3>
-                  <p className="text-gray-600">
-                    <a href="mailto:dinksport145@gmail.com" className="text-[#D92128] hover:underline">dinksport145@gmail.com</a>
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-12">
+            <div className="mt-8 bg-white rounded-lg shadow-md p-6">
               <h3
                 className="text-2xl font-bold text-[#1A1A1A] mb-4"
                 style={{ fontFamily: 'Montserrat, sans-serif' }}
@@ -105,10 +65,32 @@ const Contact = () => {
                 Business Hours
               </h3>
               <div className="space-y-2 text-gray-600">
-                <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
-                <p>Saturday: 9:00 AM - 1:00 PM</p>
-                <p>Sunday: Closed</p>
+                <p>{SITE.businessHours.weekdays}</p>
+                <p>{SITE.businessHours.saturday}</p>
+                <p>{SITE.businessHours.sunday}</p>
               </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a
+                href={SITE.telegramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-[#0088cc] text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-[#007ab8]"
+              >
+                <Send className="w-4 h-4" />
+                Telegram
+              </a>
+              {SITE.phones.slice(0, 1).map((phone) => (
+                <a
+                  key={phone}
+                  href={`tel:${phoneTelLink(phone)}`}
+                  className="inline-flex items-center gap-2 border border-[#D92128] text-[#D92128] px-5 py-2.5 rounded-full text-sm font-medium hover:bg-[#D92128] hover:text-white"
+                >
+                  <Phone className="w-4 h-4" />
+                  Call {phone}
+                </a>
+              ))}
             </div>
           </div>
 
@@ -122,9 +104,7 @@ const Contact = () => {
               </h2>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Name *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
                   <input
                     type="text"
                     required
@@ -135,9 +115,7 @@ const Contact = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
                   <input
                     type="email"
                     required
@@ -148,9 +126,7 @@ const Contact = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Subject *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Subject *</label>
                   <select
                     required
                     value={formData.subject}
@@ -159,17 +135,14 @@ const Contact = () => {
                   >
                     <option value="">Select a subject</option>
                     <option value="general">General Inquiry</option>
-                    <option value="wholesale">Wholesale Order</option>
-                    <option value="custom">Custom Team Kits</option>
-                    <option value="sponsorship">Sponsorship</option>
+                    <option value="order">Order & Delivery</option>
+                    <option value="logistics">Logistics (Ethiopia)</option>
                     <option value="support">Customer Support</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Message *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Message *</label>
                   <textarea
                     required
                     rows={5}
@@ -208,7 +181,7 @@ const Contact = () => {
               style={{ border: 0 }}
               allowFullScreen
               loading="lazy"
-              title="Dink Sports Wear Location"
+              title={`${SITE.name} — Addis Ababa`}
             ></iframe>
           </div>
         </div>

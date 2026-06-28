@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { SITE } from '../config/site';
+import SupportContactCard from '../components/SupportContactCard';
 
 interface FAQItem {
   question: string;
@@ -10,6 +13,10 @@ export function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const faqs: FAQItem[] = [
+    {
+      question: 'Where do you deliver in Ethiopia?',
+      answer: `${SITE.name} delivers across Ethiopia including ${SITE.deliveryCities.map((c) => c.name).join(', ')}. Delivery times vary by city — typically 1–3 business days from Addis Ababa. Contact us on ${SITE.phones.join(', ')} or Telegram (${SITE.telegramHandle}) for your area.`,
+    },
     {
       question: 'What sizes do you offer, and how do I choose the right fit?',
       answer:
@@ -92,7 +99,9 @@ export function FAQSection() {
             </div>
           ))}
         </div>
-        <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
+        <div className="mt-8 space-y-6">
+          <SupportContactCard />
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
           <h3
             className="text-lg font-semibold text-[#1A1A1A] mb-2"
             style={{ fontFamily: 'Montserrat, sans-serif' }}
@@ -100,14 +109,15 @@ export function FAQSection() {
             Still Have Questions?
           </h3>
           <p className="text-gray-600 mb-4">
-            Can't find the answer you're looking for? Our team is here to help.
+            Call {SITE.phones[0]}, email {SITE.email}, or message us on Telegram.
           </p>
-          <a
-            href="/contact"
+          <Link
+            to="/contact"
             className="inline-flex items-center justify-center bg-[#D92128] text-white px-6 py-2 rounded-full font-medium hover:bg-[#b91a20] transition-colors"
           >
             Contact Us
-          </a>
+          </Link>
+          </div>
         </div>
       </div>
     </section>

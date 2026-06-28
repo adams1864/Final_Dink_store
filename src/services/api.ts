@@ -216,6 +216,16 @@ export interface DiscountCreatePayload {
   endsAt?: string | null;
 }
 
+export interface CustomerRecord {
+  id: string;
+  email: string;
+  name: string | null;
+  phone: string | null;
+  createdAt: string | null;
+  orderCount: number;
+  totalCents: number;
+}
+
 export const API_BASE_URL = ((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api').replace(/\/$/, '');
 const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
@@ -1027,6 +1037,16 @@ export async function validateDiscount(code: string, subtotalCents: number, tota
     throw new Error(data?.message || 'Invalid coupon');
   }
   return { discountCents: data.discountCents ?? 0, totalCents: data.totalCents ?? subtotalCents };
+}
+
+export async function getCustomers(): Promise<CustomerRecord[]> {
+  const response = await apiFetch(`${API_BASE_URL}/customers`);
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data?.message || `Failed to fetch customers: ${response.statusText}`);
+  }
+  const payload = await response.json();
+  return Array.isArray(payload?.data) ? payload.data : [];
 }
 
 /**

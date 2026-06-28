@@ -9,40 +9,66 @@ export interface AuthUser {
   role?: string;
 }
 
-const TOKEN_KEY = 'auth_token';
-
-export async function adminLogin(email: string, password: string) {
+export async function login(email: string, password: string) {
   const res = await apiFetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
   });
 
+  const payload = await res.json().catch(() => ({ message: res.statusText }));
+
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(err.message || 'Login failed');
+    throw new Error(payload.message || payload.error || 'Login failed');
   }
 
-  const payload = await res.json();
-  // Persist returned token (if any)
   if (payload?.token) setStoredToken(payload.token);
-  return payload;
+  return payload as { token: string; user: AuthUser };
 }
 
-export async function getCurrentUser(): Promise<{ user: AuthUser | null } > {
+export async function signup(payload: {
+  email: string;
+  password: string;
+  name: string;
+  phone?: string;
+}) {
+  const res = await apiFetch(`${API_BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json().catch(() => ({ message: res.statusText }));
+
+  if (!res.ok) {
+    throw new Error(data.message || data.error || 'Sign up failed');
+  }
+
+  if (data?.token) setStoredToken(data.token);
+  return data as { token: string; user: AuthUser };
+}
+
+/** @deprecated use login() */
+export async function adminLogin(email: string, password: string) {
+  return login(email, password);
+}
+
+export async function getCurrentUser(): Promise<{ user: AuthUser | null }> {
   const res = await apiFetch(`${API_BASE_URL}/auth/me`);
   if (!res.ok) return { user: null };
   return res.json();
 }
 
-export async function adminLogout() {
+export async function logout() {
   try {
-    // Ask server to clear cookie then clear local token
-    try {
-      await apiFetch(`${API_BASE_URL}/auth/logout`, { method: 'POST' });
-    } catch (_err) {
-      // ignore server errors, still clear local token
-    }
-    setStoredToken(null);
-  } catch (_e) {}
+    await apiFetch(`${API_BASE_URL}/auth/logout`, { method: 'POST' });
+  } catch {
+    // still clear local token
+  }
+  setStoredToken(null);
+}
+
+/** @deprecated use logout() */
+export async function adminLogout() {
+  return logout();
 }

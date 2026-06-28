@@ -2,9 +2,20 @@ import { Link } from 'react-router-dom';
 import { Minus, Plus, Trash2, ShoppingCart } from 'lucide-react';
 import { formatPrice } from '../services/api';
 import { MIN_ORDER_QTY, useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const Cart = () => {
-  const { items, total, updateQuantity, removeItem, clear } = useCart();
+  const { items, total, updateQuantity, removeItem, clear, cartReady } = useCart();
+  const { user } = useAuth();
+  const isCustomer = user?.role === 'customer';
+
+  if (!cartReady) {
+    return (
+      <div className="min-h-screen pt-24 bg-[#F4F4F4]">
+        <div className="container mx-auto px-6 py-16 text-center text-gray-600">Loading cart…</div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -15,7 +26,11 @@ const Cart = () => {
               <ShoppingCart className="w-6 h-6 text-gray-500" />
             </div>
             <h1 className="text-2xl font-bold text-[#1A1A1A] mb-3">Your cart is empty</h1>
-            <p className="text-gray-600 mb-6">Add items to your cart to continue.</p>
+            <p className="text-gray-600 mb-6">
+              {isCustomer
+                ? `No items saved for ${user.name || user.email}. Browse the shop to add products.`
+                : 'Sign in to save your cart across devices, or add items as a guest.'}
+            </p>
             <Link
               to="/shop"
               className="inline-flex items-center justify-center bg-[#D92128] text-white px-6 py-2 rounded-lg hover:bg-[#b91a20]"
@@ -48,7 +63,13 @@ const Cart = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-8">
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-bold text-[#1A1A1A] mb-4">Your Cart</h2>
+            <h2 className="text-xl font-bold text-[#1A1A1A] mb-1">Your Cart</h2>
+            {isCustomer && (
+              <p className="text-sm text-gray-500 mb-4">
+                Saved for {user.name || user.email}
+              </p>
+            )}
+            {!isCustomer && <div className="mb-4" />}
             <div className="space-y-4">
               {items.map((item) => (
                 <div key={item.productId} className="flex items-center gap-4 border-b pb-4">

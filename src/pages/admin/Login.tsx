@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminLogin, getCurrentUser } from '../../services/auth';
-import logo from '../../assets/logo1.png';
+import { brandLogo } from '../../assets';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -35,7 +35,7 @@ export default function AdminLogin() {
       try {
         const data = await getCurrentUser();
         if (cancelled) return;
-        if (data?.user) navigate('/admin/dashboard');
+        if (data?.user?.role === 'admin') navigate('/admin/dashboard');
       } catch (_err) {
         // ignore
       }
@@ -52,7 +52,7 @@ export default function AdminLogin() {
         {/* Top-left floating logo */}
         <div className="absolute -top-10 -left-10 z-20">
           <div className="bg-white rounded-full p-4 shadow-2xl ring-2 ring-red-50">
-            <img src={logo} alt="logo" className="w-20 h-20 object-contain" />
+            <img src={brandLogo} alt="logo" className="w-20 h-20 object-contain rounded-full" />
           </div>
         </div>
         <div className="hidden md:flex flex-col items-center bg-red-600 text-white pt-14 pb-8 px-8">

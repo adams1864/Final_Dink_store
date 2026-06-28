@@ -25,10 +25,15 @@ import MessagesPage from './pages/admin/MessagesPage';
 import DiscountsPage from './pages/admin/DiscountsPage';
 import FeedbacksPage from './pages/admin/FeedbacksPage';
 import AdminLogin from './pages/admin/Login';
+import CustomerLogin from './pages/Login';
+import Signup from './pages/Signup';
+import CustomersPage from './pages/admin/CustomersPage';
 import { CartProvider } from './contexts/CartContext';
+import { AuthProvider } from './contexts/AuthContext';
 
 function App() {
   return (
+    <AuthProvider>
     <CartProvider>
       <Router>
         <Routes>
@@ -54,6 +59,8 @@ function App() {
                     <Route path="/faq" element={<FAQ />} />
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/terms" element={<Terms />} />
+                    <Route path="/login" element={<CustomerLogin />} />
+                    <Route path="/signup" element={<Signup />} />
                   </Routes>
                 </main>
                 <Footer />
@@ -72,11 +79,13 @@ function App() {
             <Route path="messages" element={<MessagesPage />} />
             <Route path="feedback" element={<FeedbacksPage />} />
             <Route path="discounts" element={<DiscountsPage />} />
+            <Route path="customers" element={<CustomersPage />} />
             <Route path="leads" element={<div>Leads page coming soon</div>} />
           </Route>
         </Routes>
       </Router>
     </CartProvider>
+    </AuthProvider>
   );
 }
 

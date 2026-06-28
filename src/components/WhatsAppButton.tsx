@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Send } from 'lucide-react';
+import { SITE } from '../config/site';
+import { brandLogo } from '../assets';
 
 const WhatsAppButton = () => {
   const [hidden, setHidden] = useState(false);
@@ -25,13 +26,13 @@ const WhatsAppButton = () => {
 
   return (
     <a
-      href="https://t.me/dinksportw"
+      href={SITE.telegramUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-6 right-6 z-50 bg-[#0088cc] text-white p-4 rounded-full shadow-lg hover:bg-[#007ab8] transition-all duration-300 hover:scale-110 animate-bounce"
+      className="fixed bottom-6 right-6 z-50 bg-[#0088cc] text-white p-3 rounded-full shadow-lg hover:bg-[#007ab8] transition-all duration-300 hover:scale-110"
       aria-label="Chat on Telegram"
     >
-      <Send className="w-6 h-6" />
+      <img src={brandLogo} alt="" className="w-8 h-8 object-contain rounded-full bg-white/90 p-0.5" />
     </a>
   );
 };

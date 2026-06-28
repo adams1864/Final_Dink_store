@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { fetchProducts, Product as ApiProduct } from '../services/api';
 import ProductCard from '../components/ProductCard';
-import { Filter } from 'lucide-react';
+import { Filter, Search } from 'lucide-react';
 
 const Shop = () => {
   const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedGender, setSelectedGender] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +22,17 @@ const Shop = () => {
     if (categoryParam) {
       setSelectedCategory(categoryParam);
     }
+    const qParam = searchParams.get('q');
+    if (qParam) {
+      setSearchQuery(qParam);
+      setDebouncedSearch(qParam);
+    }
   }, [searchParams]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     async function loadProducts() {
@@ -31,7 +43,10 @@ const Shop = () => {
         const category = selectedCategory !== 'all' ? selectedCategory : undefined;
         const gender = selectedGender !== 'all' ? selectedGender : undefined;
         
-        const result = await fetchProducts(category, gender);
+        const result = await fetchProducts(category, gender, {
+          q: debouncedSearch || undefined,
+          status: 'published',
+        });
         setProducts(result.data);
       } catch (err) {
         console.error('Failed to load products:', err);
@@ -42,7 +57,7 @@ const Shop = () => {
     }
 
     loadProducts();
-  }, [selectedCategory, selectedGender]);
+  }, [selectedCategory, selectedGender, debouncedSearch]);
 
   return (
     <div className="min-h-screen pt-20 bg-[#F4F4F4]">
@@ -196,6 +211,7 @@ const Shop = () => {
                 onClick={() => {
                   setSelectedCategory('all');
                   setSelectedGender('all');
+                  setSearchQuery('');
                 }}
                 className="w-full bg-[#D92128] text-white py-2 rounded-lg hover:bg-[#b91a20] transition-colors"
               >
@@ -205,6 +221,19 @@ const Shop = () => {
           </div>
 
           <div className="flex-1">
+            <div className="mb-6">
+              <div className="relative max-w-xl">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search products by name, SKU, or description..."
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#D92128]/30 focus:border-[#D92128]"
+                />
+              </div>
+            </div>
+
             <div className="flex items-center justify-between mb-6">
               <p className="text-gray-600">
                 {loading ? 'Loading...' : `Showing ${products.length} product${products.length !== 1 ? 's' : ''}`}

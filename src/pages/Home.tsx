@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 // Swiper is used inside the HeroSection component; no direct imports needed here
-import football3 from '../assets/football3.jpg';
-import football2 from '../assets/football2.jpg';
-import football from '../assets/football.jpg';
-import football1 from '../assets/football1.jpg';
-import kits from '../assets/kits.jpg';
-import image4 from '../assets/image4.jpg';
+import {
+  heroImages as defaultHeroImages,
+  categoryImages,
+  fallbackProductImage,
+} from '../assets';
 import { Flag, Globe, Plane, Droplet, Wind, Shield, BadgePercent, Trophy, Heart, ShoppingCart } from 'lucide-react';
 import RatingStars from '../components/RatingStars';
 import { fetchProductById, getSalesTopProducts, getTopRatedProducts, type TopRatedProduct } from '../services/api';
@@ -18,27 +17,27 @@ import { FAQSection } from './FAQ';
 // (Removed unused WingLineArt - not needed when HeroSection provides decorations)
 
 const Home = () => {
-  const heroImages: string[] = [football3, football2, football];
+  const heroImages: string[] = defaultHeroImages;
   const fallbackTopSellingProducts = [
     {
       id: 1,
       name: 'Velocity Pro Home Kit',
       category: 'Match Kits',
-      image: football3,
+      image: defaultHeroImages[0],
       sold: '1,200+ sold',
     },
     {
       id: 2,
       name: 'Elite Training Jersey',
       category: 'Training',
-      image: football2,
+      image: defaultHeroImages[1],
       sold: '980+ sold',
     },
     {
       id: 3,
       name: 'Performance Sports Socks',
       category: 'Accessories',
-      image: image4,
+      image: fallbackProductImage,
       sold: '1,500+ sold',
     },
   ];
@@ -63,7 +62,7 @@ const Home = () => {
           id: item.productId,
           name: item.name,
           category: 'Top Seller',
-          image: item.coverImage || image4,
+          image: item.coverImage || fallbackProductImage,
           sold: `${item.quantity} sold`,
         }));
 
@@ -194,7 +193,7 @@ const Home = () => {
               className="group relative overflow-hidden rounded-lg shadow-lg aspect-square"
             >
               <img
-                src={football1}
+                src={categoryImages.matchKits}
                 alt="Football Kits"
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
               />
@@ -210,7 +209,7 @@ const Home = () => {
               className="group relative overflow-hidden rounded-lg shadow-lg aspect-square"
             >
               <img
-                src={football2}
+                src={categoryImages.training}
                 alt="Training Wear"
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
               />
@@ -226,7 +225,7 @@ const Home = () => {
               className="group relative overflow-hidden rounded-lg shadow-lg aspect-square"
             >
               <img
-                src={kits}
+                src={categoryImages.accessories}
                 alt="Accessories"
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
               />
@@ -313,7 +312,7 @@ const Home = () => {
                   className="group flex items-center gap-3 sm:gap-4 bg-white border border-[#EAEAEA] rounded-xl p-3 sm:p-4 hover:border-[#D9D9D9] hover:shadow-sm transition-all min-w-[260px] flex-shrink-0"
                 >
                   <div className="relative shrink-0">
-                    <img src={product.coverImage || image4} alt={product.name} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg" />
+                    <img src={product.coverImage || fallbackProductImage} alt={product.name} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg" />
                     <span className="absolute -top-2 -right-2 bg-[#D92128] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow">
                       #{index + 1}
                     </span>
@@ -437,7 +436,7 @@ const Home = () => {
 
                   <div className="pointer-events-none absolute right-0 bottom-0 w-[60%] sm:w-[52%] h-full flex items-end justify-end">
                     <img
-                      src={currentTopSeller?.image || image4}
+                      src={currentTopSeller?.image || fallbackProductImage}
                       alt={currentTopSeller?.name || 'Top seller'}
                       className="max-h-[95%] w-auto object-contain drop-shadow-[0_18px_28px_rgba(0,0,0,0.55)]"
                     />
@@ -565,7 +564,7 @@ const Home = () => {
             </div>
             <div className="relative flex justify-center">
               <img
-                src={image4}
+                src={fallbackProductImage}
                 alt="Performance Fabric"
                 className="rounded-lg shadow-2xl w-[85%] sm:w-[75%] md:w-[65%] lg:w-[60%]"
               />
