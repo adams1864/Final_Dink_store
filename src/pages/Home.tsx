@@ -6,13 +6,13 @@ import {
   categoryImages,
   fallbackProductImage,
 } from '../assets';
-import { Flag, Globe, Plane, Droplet, Wind, Shield, BadgePercent, Trophy, Heart, ShoppingCart } from 'lucide-react';
+import { Globe, ShieldCheck, BadgePercent, Trophy, Heart, ShoppingCart, Cpu, Truck } from 'lucide-react';
 import RatingStars from '../components/RatingStars';
 import { fetchProductById, getSalesTopProducts, getTopRatedProducts, type TopRatedProduct } from '../services/api';
 import { useCart } from '../contexts/CartContext';
 
 import HeroSection from '../components/HeroSection';
-import { FAQSection } from './FAQ';
+import { SITE } from '../config/site';
 
 // (Removed unused WingLineArt - not needed when HeroSection provides decorations)
 
@@ -21,24 +21,24 @@ const Home = () => {
   const fallbackTopSellingProducts = [
     {
       id: 1,
-      name: 'Velocity Pro Home Kit',
-      category: 'Match Kits',
+      name: 'HP OMEN Gaming Laptop',
+      category: 'Laptops',
       image: defaultHeroImages[0],
-      sold: '1,200+ sold',
+      sold: '120+ sold',
     },
     {
       id: 2,
-      name: 'Elite Training Jersey',
-      category: 'Training',
+      name: 'Apple AirPods Max',
+      category: 'Audio',
       image: defaultHeroImages[1],
-      sold: '980+ sold',
+      sold: '98+ sold',
     },
     {
       id: 3,
-      name: 'Performance Sports Socks',
-      category: 'Accessories',
+      name: 'PlayStation 5 Slim',
+      category: 'Gaming',
       image: fallbackProductImage,
-      sold: '1,500+ sold',
+      sold: '75+ sold',
     },
   ];
 
@@ -160,21 +160,15 @@ const Home = () => {
             className="text-center text-2xl font-bold text-[#1A1A1A] mb-8"
             style={{ fontFamily: 'Montserrat, sans-serif' }}
           >
-            Born in Ethiopia, Worn Globally
+            Delivering Across Ethiopia
           </h3>
-          <div className="flex flex-wrap justify-center items-center gap-8 opacity-50">
-            <div className="text-center">
-              <p className="text-sm text-gray-600">Official Partner</p>
-              <p className="font-bold text-[#1A1A1A]">Ethiopian FC</p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-gray-600">Trusted by</p>
-              <p className="font-bold text-[#1A1A1A]">Local Clubs</p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-gray-600">Supplied to</p>
-              <p className="font-bold text-[#1A1A1A]">Regional Teams</p>
-            </div>
+          <div className="flex flex-wrap justify-center items-center gap-8 opacity-70">
+            {SITE.deliveryCities.map((city) => (
+              <div key={city.name} className="text-center">
+                <p className="text-sm text-gray-600">{city.note}</p>
+                <p className="font-bold text-[#1A1A1A]">{city.name}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -189,50 +183,50 @@ const Home = () => {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <Link
-              to="/shop?category=match-kits"
+              to="/shop?category=laptops-computers"
               className="group relative overflow-hidden rounded-lg shadow-lg aspect-square"
             >
               <img
-                src={categoryImages.matchKits}
-                alt="Football Kits"
+                src={categoryImages.laptops}
+                alt="Laptops and Computers"
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A] to-transparent opacity-70"></div>
               <div className="absolute bottom-0 left-0 right-0 p-6">
-                <h3 className="text-2xl font-bold text-white mb-2">Football Kits</h3>
-                <p className="text-sm text-gray-200">Professional Match Wear</p>
+                <h3 className="text-2xl font-bold text-white mb-2">Laptops & Computers</h3>
+                <p className="text-sm text-gray-200">Work, study, and create</p>
               </div>
             </Link>
 
             <Link
-              to="/shop?category=training"
+              to="/shop?category=audio"
               className="group relative overflow-hidden rounded-lg shadow-lg aspect-square"
             >
               <img
-                src={categoryImages.training}
-                alt="Training Wear"
+                src={categoryImages.audio}
+                alt="Audio and Headphones"
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A] to-transparent opacity-70"></div>
               <div className="absolute bottom-0 left-0 right-0 p-6">
-                <h3 className="text-2xl font-bold text-white mb-2">Training Wear</h3>
-                <p className="text-sm text-gray-200">High-Performance Gear</p>
+                <h3 className="text-2xl font-bold text-white mb-2">Audio & Headphones</h3>
+                <p className="text-sm text-gray-200">Premium sound on the go</p>
               </div>
             </Link>
 
             <Link
-              to="/shop?category=accessories"
+              to="/shop?category=gaming"
               className="group relative overflow-hidden rounded-lg shadow-lg aspect-square"
             >
               <img
-                src={categoryImages.accessories}
-                alt="Accessories"
+                src={categoryImages.gaming}
+                alt="Gaming and Consoles"
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A] to-transparent opacity-70"></div>
               <div className="absolute bottom-0 left-0 right-0 p-6">
-                <h3 className="text-2xl font-bold text-white mb-2">Accessories</h3>
-                <p className="text-sm text-gray-200">Complete Your Kit</p>
+                <h3 className="text-2xl font-bold text-white mb-2">Gaming & Consoles</h3>
+                <p className="text-sm text-gray-200">Level up your setup</p>
               </div>
             </Link>
           </div>
@@ -245,18 +239,18 @@ const Home = () => {
             className="text-4xl font-bold text-center text-[#1A1A1A] mb-16"
             style={{ fontFamily: 'Montserrat, sans-serif' }}
           >
-            Why Choose Dink?
+            Why Choose MYT?
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             <div className="text-center">
               <div className="bg-[#D92128] w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Flag className="w-10 h-10 text-white" />
+                <Cpu className="w-10 h-10 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-[#1A1A1A] mb-4">
-                Ethiopian Craftsmanship
+                Genuine Electronics
               </h3>
               <p className="text-gray-600">
-                Handcrafted with pride in Addis Ababa, combining traditional quality with modern technology.
+                Authentic laptops, phones, gaming gear, and accessories from trusted brands — no counterfeits.
               </p>
             </div>
 
@@ -265,22 +259,22 @@ const Home = () => {
                 <Globe className="w-10 h-10 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-[#1A1A1A] mb-4">
-                Global Standards
+                Nationwide Delivery
               </h3>
               <p className="text-gray-600">
-                Meeting international quality standards with breathable, moisture-wicking fabrics.
+                Fast shipping to Addis Ababa, Dire Dawa, Hawassa, Bahir Dar, and beyond.
               </p>
             </div>
 
             <div className="text-center">
               <div className="bg-[#D92128] w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Plane className="w-10 h-10 text-white" />
+                <ShieldCheck className="w-10 h-10 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-[#1A1A1A] mb-4">
-                Fast Delivery
+                Secure Checkout
               </h3>
               <p className="text-gray-600">
-                Swift international shipping with trusted partners DHL, FedEx, and Ethiopian Airlines Cargo.
+                Safe online payments with Chapa and transparent pricing in ETB at checkout.
               </p>
             </div>
           </div>
@@ -348,16 +342,16 @@ const Home = () => {
               className="text-3xl font-bold mb-4"
               style={{ fontFamily: 'Montserrat, sans-serif' }}
             >
-              Buy 5 Kits, Get 10% Off
+              Buy 5 Items, Get 10% Off
             </h3>
             <p className="text-gray-300 mb-8">
-              Perfect for teams and group orders. Buy 5 or more items and get an automatic 10% discount at checkout.
+              Stock up on your favorite gadgets. Buy 5 or more items and get an automatic 10% discount at checkout.
             </p>
             <Link
               to="/shop"
               className="inline-block bg-[#D92128] text-white px-10 py-3 rounded-full font-medium hover:bg-[#b91a20] transition-colors"
             >
-              Shop Team Deals
+              Shop Deals
             </Link>
           </div>
         </div>
@@ -533,39 +527,39 @@ const Home = () => {
                 className="text-4xl font-bold mb-6"
                 style={{ fontFamily: 'Montserrat, sans-serif' }}
               >
-                Performance Fabric Technology
+                Performance You Can Trust
               </h2>
               <p className="text-lg text-gray-300 mb-8">
-                Our advanced fabric technology ensures you perform at your best, no matter the conditions.
+                From gaming rigs to everyday devices — we stock tech that keeps up with your lifestyle.
               </p>
               <div className="space-y-4">
                 <div className="flex items-start gap-4">
-                  <Droplet className="w-6 h-6 text-[#D92128] mt-1 flex-shrink-0" />
+                  <Cpu className="w-6 h-6 text-[#D92128] mt-1 flex-shrink-0" />
                   <div>
-                    <h4 className="font-bold text-lg mb-1">Moisture Wicking</h4>
-                    <p className="text-gray-400">Keeps you dry during intense activity</p>
+                    <h4 className="font-bold text-lg mb-1">Latest Hardware</h4>
+                    <p className="text-gray-400">Powerful processors, sharp displays, and long-lasting batteries</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <Wind className="w-6 h-6 text-[#D92128] mt-1 flex-shrink-0" />
+                  <Truck className="w-6 h-6 text-[#D92128] mt-1 flex-shrink-0" />
                   <div>
-                    <h4 className="font-bold text-lg mb-1">Breathable Mesh</h4>
-                    <p className="text-gray-400">Superior ventilation for maximum comfort</p>
+                    <h4 className="font-bold text-lg mb-1">Fast Delivery</h4>
+                    <p className="text-gray-400">Quick dispatch to major cities across Ethiopia</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <Shield className="w-6 h-6 text-[#D92128] mt-1 flex-shrink-0" />
+                  <ShieldCheck className="w-6 h-6 text-[#D92128] mt-1 flex-shrink-0" />
                   <div>
-                    <h4 className="font-bold text-lg mb-1">UV Protection</h4>
-                    <p className="text-gray-400">Built-in sun protection for outdoor sports</p>
+                    <h4 className="font-bold text-lg mb-1">Warranty Support</h4>
+                    <p className="text-gray-400">Genuine products with manufacturer warranty options</p>
                   </div>
                 </div>
               </div>
             </div>
             <div className="relative flex justify-center">
               <img
-                src={fallbackProductImage}
-                alt="Performance Fabric"
+                src={categoryImages.laptops}
+                alt="Electronics showcase"
                 className="rounded-lg shadow-2xl w-[85%] sm:w-[75%] md:w-[65%] lg:w-[60%]"
               />
             </div>
@@ -579,22 +573,19 @@ const Home = () => {
             className="text-4xl font-bold text-[#1A1A1A] mb-6"
             style={{ fontFamily: 'Montserrat, sans-serif' }}
           >
-            Ready to Elevate Your Team?
+            Ready to Upgrade Your Tech?
           </h2>
           <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-            Join hundreds of teams who trust Dink Sports Wear for their professional kits.
+            Browse laptops, phones, gaming consoles, and more at MYT — delivered across Ethiopia.
           </p>
           <Link
-            to="/contact"
+            to="/shop"
             className="inline-block bg-[#D92128] text-white px-12 py-4 rounded-full text-lg font-medium hover:bg-[#b91a20] transition-all duration-300 transform hover:scale-105"
           >
-            Get Your Custom Quote
+            Browse Catalog
           </Link>
         </div>
       </section>
-
-      {/* FAQ Section below main content */}
-      <FAQSection />
     </div>
   );
 };

@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { API_BASE_URL } from '../services/api';
 import apiFetch from '../services/fetcher';
 import { X, Upload, Loader2 } from 'lucide-react';
+import {
+  DEFAULT_PRODUCT_CATEGORY,
+  PRODUCT_CATEGORIES,
+} from '../config/productCategories';
 
 interface CreateProductModalProps {
   isOpen: boolean;
@@ -9,30 +13,32 @@ interface CreateProductModalProps {
   onSuccess: () => void;
 }
 
+const INITIAL_FORM = {
+  name: '',
+  description: '',
+  price: '',
+  stock: '',
+  category: DEFAULT_PRODUCT_CATEGORY,
+  gender: 'unisex',
+  size: '',
+  colorValues: '',
+  sku: '',
+  material: '',
+  weight: '',
+  fit: '1 Year',
+  features: 'Fast delivery, Quality checked, MYT support',
+  coverImage: '',
+  image1: '',
+  image2: '',
+  status: 'published',
+};
+
 const CreateProductModal: React.FC<CreateProductModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    stock: '',
-    category: 'match-kits',
-    gender: 'men',
-    size: '',
-    colorValues: '',
-    sku: '',
-    material: '100% Polyester',
-    weight: '180g',
-    fit: 'Athletic Fit',
-    features: 'Moisture Wicking, Breathable, Quick Dry',
-    coverImage: '',
-    image1: '',
-    image2: '',
-    status: 'published',
-  });
+
+  const [formData, setFormData] = useState({ ...INITIAL_FORM });
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'coverImage' | 'image1' | 'image2') => {
     const file = e.target.files?.[0];
@@ -40,32 +46,28 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ isOpen, onClose
 
     try {
       setLoading(true);
-      
-      // Upload to Cloudinary via backend
-      const formData = new FormData();
-      formData.append('image', file);
-      
-      const response = await apiFetch(`${API_BASE_URL}/upload`, { 
-        method: 'POST', 
-        body: formData 
+
+      const uploadData = new FormData();
+      uploadData.append('image', file);
+
+      const response = await apiFetch(`${API_BASE_URL}/upload?folder=myt_belew/products`, {
+        method: 'POST',
+        body: uploadData,
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to upload image');
       }
-      
+
       const data = await response.json();
-      
-      // Update form with Cloudinary URL
-      setFormData(prev => ({ ...prev, [field]: data.url }));
-      
-      // Set preview for cover image
+
+      setFormData((prev) => ({ ...prev, [field]: data.url }));
+
       if (field === 'coverImage') {
         setImagePreview(data.url);
       }
-      
+
       setError(null);
-      
     } catch (err) {
       console.error('Image upload error:', err);
       setError('Failed to upload image. Please try again.');
@@ -80,14 +82,26 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ isOpen, onClose
     setError(null);
 
     try {
-      // Convert features string to JSON array
-      const featuresArray = formData.features.split(',').map(f => f.trim()).filter(Boolean);
-      
+      const featuresArray = formData.features.split(',').map((f) => f.trim()).filter(Boolean);
+
       const productData = {
-        ...formData,
+        name: formData.name,
+        description: formData.description,
         price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
+        stock: parseInt(formData.stock, 10),
+        category: formData.category,
+        gender: formData.gender,
+        size: formData.size,
+        color: formData.colorValues,
+        sku: formData.sku,
+        material: formData.material,
+        weight: formData.weight,
+        fit: formData.fit,
         features: JSON.stringify(featuresArray),
+        coverImage: formData.coverImage,
+        image1: formData.image1,
+        image2: formData.image2,
+        status: formData.status,
       };
 
       const response = await apiFetch(`${API_BASE_URL}/products`, {
@@ -102,29 +116,8 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ isOpen, onClose
 
       onSuccess();
       onClose();
-      
-      // Reset form
-      setFormData({
-        name: '',
-        description: '',
-        price: '',
-        stock: '',
-        category: 'match-kits',
-        gender: 'men',
-        size: '',
-        colorValues: '',
-        sku: '',
-        material: '100% Polyester',
-        weight: '180g',
-        fit: 'Athletic Fit',
-        features: 'Moisture Wicking, Breathable, Quick Dry',
-        coverImage: '',
-        image1: '',
-        image2: '',
-        status: 'published',
-      });
+      setFormData({ ...INITIAL_FORM });
       setImagePreview('');
-      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create product');
     } finally {
@@ -154,19 +147,18 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ isOpen, onClose
             </div>
           )}
 
-          {/* Basic Info */}
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">Basic Information</h3>
-            
+
             <div>
               <label className="block text-sm font-medium mb-2">Product Name *</label>
               <input
                 type="text"
                 required
                 value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
-                placeholder="e.g., Manchester United Home Jersey"
+                placeholder="e.g., HP Pavilion Laptop, Sony WH-1000XM5"
               />
             </div>
 
@@ -175,10 +167,10 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ isOpen, onClose
               <textarea
                 required
                 value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
                 rows={3}
-                placeholder="Product description..."
+                placeholder="Key specs, condition, what's included in the box..."
               />
             </div>
 
@@ -190,9 +182,9 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ isOpen, onClose
                   required
                   step="0.01"
                   value={formData.price}
-                  onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, price: e.target.value }))}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
-                  placeholder="1500.00"
+                  placeholder="45999.00"
                 />
               </div>
 
@@ -202,9 +194,9 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ isOpen, onClose
                   type="number"
                   required
                   value={formData.stock}
-                  onChange={(e) => setFormData(prev => ({ ...prev, stock: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, stock: e.target.value }))}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
-                  placeholder="50"
+                  placeholder="15"
                 />
               </div>
             </div>
@@ -214,127 +206,103 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ isOpen, onClose
                 <label className="block text-sm font-medium mb-2">Category *</label>
                 <select
                   value={formData.category}
-                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
                 >
-                  <option value="match-kits">Match Kits</option>
-                  <option value="training">Training</option>
-                  <option value="casual">Casual</option>
-                  <option value="accessories">Accessories</option>
+                  {PRODUCT_CATEGORIES.map((cat) => (
+                    <option key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Gender *</label>
-                <select
-                  value={formData.gender}
-                  onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value }))}
+                <label className="block text-sm font-medium mb-2">Brand</label>
+                <input
+                  type="text"
+                  value={formData.material}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, material: e.target.value }))}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
-                >
-                  <option value="men">Men</option>
-                  <option value="women">Women</option>
-                  <option value="kids">Kids</option>
-                  <option value="unisex">Unisex</option>
-                </select>
+                  placeholder="Apple, HP, Sony, Canon..."
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Sizes (comma-separated)</label>
-                <input
-                  type="text"
-                  value={formData.size}
-                  onChange={(e) => setFormData(prev => ({ ...prev, size: e.target.value }))}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
-                  placeholder="S, M, L, XL"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Colors (comma-separated)</label>
-                <input
-                  type="text"
-                  value={formData.colorValues}
-                  onChange={(e) => setFormData(prev => ({ ...prev, colorValues: e.target.value }))}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
-                  placeholder="Red, Blue, White"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">SKU</label>
-              <input
-                type="text"
-                value={formData.sku}
-                onChange={(e) => setFormData(prev => ({ ...prev, sku: e.target.value }))}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
-                placeholder="SKU-0001"
-              />
-            </div>
-          </div>
-
-          {/* Product Details */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Product Details</h3>
-            
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Material</label>
-                <input
-                  type="text"
-                  value={formData.material}
-                  onChange={(e) => setFormData(prev => ({ ...prev, material: e.target.value }))}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Weight</label>
+                <label className="block text-sm font-medium mb-2">Model / Variant</label>
                 <input
                   type="text"
                   value={formData.weight}
-                  onChange={(e) => setFormData(prev => ({ ...prev, weight: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, weight: e.target.value }))}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
+                  placeholder="e.g., PS5 Slim, R6 Mark II, 256GB"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Fit</label>
+                <label className="block text-sm font-medium mb-2">Color</label>
                 <input
                   type="text"
-                  value={formData.fit}
-                  onChange={(e) => setFormData(prev => ({ ...prev, fit: e.target.value }))}
+                  value={formData.colorValues}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, colorValues: e.target.value }))}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
+                  placeholder="Black, Silver, Blue"
                 />
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Warranty</label>
+                <input
+                  type="text"
+                  value={formData.fit}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, fit: e.target.value }))}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
+                  placeholder="1 Year, 6 Months"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">SKU</label>
+                <input
+                  type="text"
+                  value={formData.sku}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, sku: e.target.value }))}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
+                  placeholder="MYT-001"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="font-semibold text-lg">Highlights</h3>
             <div>
               <label className="block text-sm font-medium mb-2">Features (comma-separated)</label>
               <input
                 type="text"
                 value={formData.features}
-                onChange={(e) => setFormData(prev => ({ ...prev, features: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, features: e.target.value }))}
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
-                placeholder="Moisture Wicking, Breathable, Quick Dry"
+                placeholder="Bluetooth, Fast charging, Original box, Free delivery"
               />
             </div>
           </div>
 
-          {/* Images */}
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">Product Images</h3>
             <p className="text-sm text-gray-600">Upload images (recommended) or paste Cloudinary URLs</p>
-            
+
             <div>
               <label className="block text-sm font-medium mb-2">Cover Image *</label>
               <div className="flex gap-4">
                 <input
                   type="text"
                   value={formData.coverImage}
-                  onChange={(e) => setFormData(prev => ({ ...prev, coverImage: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, coverImage: e.target.value }))}
                   className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
                   placeholder="https://res.cloudinary.com/... or upload below"
                   disabled={loading}
@@ -362,7 +330,7 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ isOpen, onClose
                 <input
                   type="text"
                   value={formData.image1}
-                  onChange={(e) => setFormData(prev => ({ ...prev, image1: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, image1: e.target.value }))}
                   className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
                   placeholder="https://res.cloudinary.com/... or upload below"
                   disabled={loading}
@@ -390,7 +358,7 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ isOpen, onClose
                 <input
                   type="text"
                   value={formData.image2}
-                  onChange={(e) => setFormData(prev => ({ ...prev, image2: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, image2: e.target.value }))}
                   className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
                   placeholder="https://res.cloudinary.com/... or upload below"
                   disabled={loading}
@@ -413,12 +381,11 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ isOpen, onClose
             </div>
           </div>
 
-          {/* Status */}
           <div>
             <label className="block text-sm font-medium mb-2">Status</label>
             <select
               value={formData.status}
-              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
             >
               <option value="published">Published</option>
@@ -427,7 +394,6 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ isOpen, onClose
             </select>
           </div>
 
-          {/* Actions */}
           <div className="flex gap-4 pt-4 border-t">
             <button
               type="button"

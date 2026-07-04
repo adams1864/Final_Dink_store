@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchProducts, updateProduct, deleteProduct, type Product, type ProductListMeta } from '../../services/api';
 import { Trash2, Edit2, Save, X, Plus } from 'lucide-react';
 import CreateProductModal from '../../components/CreateProductModal';
+import { getCategoryLabel } from '../../config/productCategories';
 
 const statusColors: Record<string, string> = {
   published: 'bg-green-100 text-green-800',
@@ -286,7 +287,7 @@ export default function ProductsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 capitalize">
-                        {product.category}
+                        {getCategoryLabel(product.category)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                         {isEditing ? (

@@ -893,24 +893,6 @@ const ProductDetail = () => {
             </div>
           )}
         </div>
-
-        <div className="mt-12 bg-white rounded-lg shadow-lg p-8">
-          <h2
-            className="text-3xl font-bold text-[#1A1A1A] mb-6"
-            style={{ fontFamily: 'Montserrat, sans-serif' }}
-          >
-            Need Custom Team Kits?
-          </h2>
-          <p className="text-gray-700 mb-6">
-            We specialize in creating custom team kits with your logo, colors, and design. Minimum order quantity applies.
-          </p>
-          <Link
-            to="/custom-kits"
-            className="inline-block bg-[#D92128] text-white px-8 py-3 rounded-lg font-medium hover:bg-[#b91a20] transition-colors"
-          >
-            Learn More About Custom Kits
-          </Link>
-        </div>
       </div>
     </div>
   );

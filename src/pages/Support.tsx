@@ -119,11 +119,11 @@ const Support = () => {
 
                   <div className="mb-8">
                     <h3 className="text-xl font-bold text-[#1A1A1A] mb-4">
-                      International shipping partners
+                      National shipping partners
                     </h3>
                     <div className="flex flex-wrap gap-4 mb-6">
-                      <div className="bg-[#F4F4F4] px-6 py-3 rounded-lg font-medium">DHL</div>
-                      <div className="bg-[#F4F4F4] px-6 py-3 rounded-lg font-medium">FedEx</div>
+                      {/* <div className="bg-[#F4F4F4] px-6 py-3 rounded-lg font-medium">DHL</div> */}
+                      {/* <div className="bg-[#F4F4F4] px-6 py-3 rounded-lg font-medium">FedEx</div> */}
                       <div className="bg-[#F4F4F4] px-6 py-3 rounded-lg font-medium">
                         Ethiopian Airlines Cargo
                       </div>

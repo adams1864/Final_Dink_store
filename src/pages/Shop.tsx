@@ -3,14 +3,15 @@ import { useSearchParams } from 'react-router-dom';
 import { fetchProducts, Product as ApiProduct } from '../services/api';
 import ProductCard from '../components/ProductCard';
 import { Filter, Search } from 'lucide-react';
+import { PRODUCT_CATEGORIES } from '../config/productCategories';
 
 const Shop = () => {
   const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedGender, setSelectedGender] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [products, setProducts] = useState<ApiProduct[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(true);
@@ -41,13 +42,13 @@ const Shop = () => {
         setError(null);
         
         const category = selectedCategory !== 'all' ? selectedCategory : undefined;
-        const gender = selectedGender !== 'all' ? selectedGender : undefined;
-        
-        const result = await fetchProducts(category, gender, {
+
+        const result = await fetchProducts(category, undefined, {
           q: debouncedSearch || undefined,
           status: 'published',
         });
         setProducts(result.data);
+        setTotalProducts(Number(result.meta?.total ?? result.data.length));
       } catch (err) {
         console.error('Failed to load products:', err);
         setError('Failed to load products. Please try again later.');
@@ -57,7 +58,7 @@ const Shop = () => {
     }
 
     loadProducts();
-  }, [selectedCategory, selectedGender, debouncedSearch]);
+  }, [selectedCategory, debouncedSearch]);
 
   return (
     <div className="min-h-screen pt-20 bg-[#F4F4F4]">
@@ -71,7 +72,7 @@ const Shop = () => {
             Catalog
           </h1>
           <p className="text-gray-700 text-center mt-4 relative z-10">
-            Browse our collection of professional sportswear
+            Browse electronics and accessories at MYT
           </p>
         </div>
       </div>
@@ -110,107 +111,25 @@ const Shop = () => {
                     />
                     <span className="text-gray-700">All Products</span>
                   </label>
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="radio"
-                      name="category"
-                      value="match-kits"
-                      checked={selectedCategory === 'match-kits'}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="mr-2 accent-[#D92128]"
-                    />
-                    <span className="text-gray-700">Match Kits</span>
-                  </label>
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="radio"
-                      name="category"
-                      value="training"
-                      checked={selectedCategory === 'training'}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="mr-2 accent-[#D92128]"
-                    />
-                    <span className="text-gray-700">Training</span>
-                  </label>
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="radio"
-                      name="category"
-                      value="casual"
-                      checked={selectedCategory === 'casual'}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="mr-2 accent-[#D92128]"
-                    />
-                    <span className="text-gray-700">Casual</span>
-                  </label>
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="radio"
-                      name="category"
-                      value="accessories"
-                      checked={selectedCategory === 'accessories'}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="mr-2 accent-[#D92128]"
-                    />
-                    <span className="text-gray-700">Accessories</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="mb-6 pt-6 border-t border-gray-200">
-                <h4 className="font-bold text-[#1A1A1A] mb-3">Gender</h4>
-                <div className="space-y-2">
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="radio"
-                      name="gender"
-                      value="all"
-                      checked={selectedGender === 'all'}
-                      onChange={(e) => setSelectedGender(e.target.value)}
-                      className="mr-2 accent-[#D92128]"
-                    />
-                    <span className="text-gray-700">All</span>
-                  </label>
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="radio"
-                      name="gender"
-                      value="men"
-                      checked={selectedGender === 'men'}
-                      onChange={(e) => setSelectedGender(e.target.value)}
-                      className="mr-2 accent-[#D92128]"
-                    />
-                    <span className="text-gray-700">Men</span>
-                  </label>
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="radio"
-                      name="gender"
-                      value="women"
-                      checked={selectedGender === 'women'}
-                      onChange={(e) => setSelectedGender(e.target.value)}
-                      className="mr-2 accent-[#D92128]"
-                    />
-                    <span className="text-gray-700">Women</span>
-                  </label>
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="radio"
-                      name="gender"
-                      value="kids"
-                      checked={selectedGender === 'kids'}
-                      onChange={(e) => setSelectedGender(e.target.value)}
-                      className="mr-2 accent-[#D92128]"
-                    />
-                    <span className="text-gray-700">Kids</span>
-                  </label>
+                  {PRODUCT_CATEGORIES.map((cat) => (
+                    <label key={cat.value} className="flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="category"
+                        value={cat.value}
+                        checked={selectedCategory === cat.value}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="mr-2 accent-[#D92128]"
+                      />
+                      <span className="text-gray-700">{cat.label}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
 
               <button
                 onClick={() => {
                   setSelectedCategory('all');
-                  setSelectedGender('all');
                   setSearchQuery('');
                 }}
                 className="w-full bg-[#D92128] text-white py-2 rounded-lg hover:bg-[#b91a20] transition-colors"
@@ -236,7 +155,7 @@ const Shop = () => {
 
             <div className="flex items-center justify-between mb-6">
               <p className="text-gray-600">
-                {loading ? 'Loading...' : `Showing ${products.length} product${products.length !== 1 ? 's' : ''}`}
+                {loading ? 'Loading...' : `Showing ${totalProducts} product${totalProducts !== 1 ? 's' : ''}`}
               </p>
               <button
                 onClick={() => setShowFilters(!showFilters)}
@@ -276,7 +195,7 @@ const Shop = () => {
                 <button
                   onClick={() => {
                     setSelectedCategory('all');
-                    setSelectedGender('all');
+                    setSearchQuery('');
                   }}
                   className="mt-4 text-[#D92128] font-medium hover:underline"
                 >

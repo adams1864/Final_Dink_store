@@ -90,18 +90,6 @@ const Header = () => {
               Shop
             </Link>
             <Link
-              to="/custom-kits"
-              className={`text-sm font-medium uppercase tracking-wide transition-colors ${
-                isActive('/custom-kits')
-                  ? 'text-[#D92128] border-b-2 border-[#D92128]'
-                  : isScrolled
-                  ? 'text-[#1A1A1A] hover:text-[#D92128]'
-                  : 'text-[#1A1A1A] hover:text-[#D92128]'
-              }`}
-            >
-              Custom Kits
-            </Link>
-            <Link
               to="/support"
               className={`text-sm font-medium uppercase tracking-wide transition-colors ${
                 isActive('/support')
@@ -165,7 +153,7 @@ const Header = () => {
               to="/contact"
               className="bg-[#D92128] text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-[#b91a20] transition-colors"
             >
-              Get a Quote
+              Contact Us
             </Link>
             <a
               href={SITE.telegramUrl}
@@ -232,15 +220,6 @@ const Header = () => {
                 } hover:bg-gray-100`}
               >
                 Shop
-              </Link>
-              <Link
-                to="/custom-kits"
-                onClick={() => setMobileOpen(false)}
-                className={`px-3 py-2 rounded-lg border border-gray-200 bg-white text-base font-medium ${
-                  isActive('/custom-kits') ? 'text-[#D92128]' : 'text-[#1A1A1A]'
-                } hover:bg-gray-100`}
-              >
-                Custom Kits
               </Link>
               <Link
                 to="/support"

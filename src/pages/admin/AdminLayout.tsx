@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { getCurrentUser, logout } from '../../services/auth';
 import {
   IconBrandProducthunt,
-  IconDiscount2,
   IconFileInvoice,
   IconHomeBolt,
   IconMessageCircle,
@@ -38,11 +37,6 @@ const menuItems = [
     label: 'Feedback',
     icon: IconStar,
     path: '/admin/feedback',
-  },
-  {
-    label: 'Discounts',
-    icon: IconDiscount2,
-    path: '/admin/discounts',
   },
   {
     label: 'Customers',
